@@ -34,11 +34,17 @@ Work top to bottom, one task at a time. Tick a box only when its tests pass. IDs
 
 ## 6. Ship
 - [ ] **6.1** Dockerfiles + nginx.conf + docker-compose.yml; manual check: signup → chat — OPS-01, 02, 03
-- [ ] **6.2** Deploy (Render + Vercel + Atlas) and add the link to the README — OPS-05
+- [x] **6.2** Deploy (Render + Vercel + Atlas) and add the link to the README — OPS-05
 - [ ] **6.3** Final README pass + `/verify` over the whole spec — OPS-04
 
 ## Log
 Newest first. One line per session: what was done, anything half-finished or blocked, gotchas.
+- 2026-11-13 — 6.2 done: live at https://ai-chatbot-web-zikz.onrender.com (API https://ai-chatbot-api-0txk.onrender.com).
+  Gotchas: Render suffixed service names → fixed rewrite/CLIENT_ORIGIN; via the static-site rewrite each request
+  came from a different proxy IP (XFF has 6 entries, client first; direct = 3) → TRUST_PROXY=6, verified one shared
+  rate-limit counter and fake XFF can't escape. Live E2E: signup, Secure+HttpOnly+SameSite cookie, AI reply 15 s
+  through the rewrite, context kept, history preview, logout, SPA deep link. Note: direct calls to the API URL can
+  still spoof XFF to dodge the per-IP auth limit (browser path is safe). 6.1 Docker still to do.
 - 2026-11-13 — Atlas configured (M0, AWS Mumbai, least-privilege user, connection string in
   ~/.ai-chatbot-secrets/atlas.env, verified read/write + other DBs blocked). render.yaml added (API in Singapore +
   static site with /api rewrite); builds simulated as Render runs them and the pruned prod build ran against Atlas.

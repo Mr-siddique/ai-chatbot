@@ -4,7 +4,8 @@ A minimal full-stack AI customer support chat app. Users sign up / log in (JWT +
 an AI assistant (OpenRouter), and revisit past conversations stored in MongoDB.
 
 > **Status:** in progress — see [specs/TASKS.md](specs/TASKS.md).
-> **Live demo:** _TBD_
+> **Live demo:** https://ai-chatbot-web-zikz.onrender.com
+> (free hosting: the API sleeps when idle, so the first request after a while can take 30–60 s)
 
 ## Features
 - Signup / login / logout with JWT in an httpOnly cookie; passwords hashed with bcrypt
@@ -16,7 +17,7 @@ an AI assistant (OpenRouter), and revisit past conversations stored in MongoDB.
 
 ## Tech stack
 React + Vite + TypeScript · Node.js + Express + TypeScript · MongoDB (Atlas) · JWT + bcrypt ·
-OpenRouter · Vitest · Docker · Vercel + Render
+OpenRouter · Vitest · Docker · Render + MongoDB Atlas
 
 ## Architecture
 ```
@@ -61,7 +62,7 @@ See `server/.env.example`, `client/.env.example`, root `.env.example`, and the t
 | 500 error details in response | message included | hidden | message included |
 | `trust proxy` (real client IP behind Render/nginx) | off | on | off |
 | Rate limiting | on | on | off (tests opt in) |
-| Client API base | `client/.env.development` → `/api` via Vite proxy | `client/.env.production` → `/api` via nginx / Vercel rewrite | mocked |
+| Client API base | `client/.env.development` → `/api` via Vite proxy | `client/.env.production` → `/api` via nginx (Docker) / Render rewrite | mocked |
 
 - Override the log level with `LOG_LEVEL` (e.g. `LOG_LEVEL=debug` in production while investigating).
 - Missing or invalid env vars stop the server at startup with a list of every problem.
@@ -80,8 +81,22 @@ See `server/.env.example`, `client/.env.example`, root `.env.example`, and the t
 | GET | `/health` | – |
 
 ## Deployment
-Client → Vercel (`client/vercel.json` rewrites `/api/*` to the server) · Server → Render
-· DB → MongoDB Atlas M0. Details in [specs/PLAN.md](specs/PLAN.md#deployment).
+Live: **https://ai-chatbot-web-zikz.onrender.com**
+
+Everything is defined in [`render.yaml`](render.yaml) (a Render Blueprint) and auto-deploys on push to `main`:
+
+| Piece | Where | Notes |
+|---|---|---|
+| Client | Render static site `ai-chatbot-web` | `/api/*` is rewritten to the API, so the auth cookie stays same-origin; other paths serve `index.html` |
+| Server | Render web service `ai-chatbot-api` (Singapore, free) | health check `/health`; `TRUST_PROXY=6` so rate limits see the real client IP behind the rewrite |
+| Database | MongoDB Atlas M0 (AWS Mumbai) | app user has read/write on `ai-support` only |
+
+To deploy your own copy: create an Atlas M0 cluster and a database user, then in Render choose
+**New → Blueprint**, pick this repo, and enter `MONGODB_URI` and `OPENROUTER_API_KEY` when asked (`JWT_SECRET`
+is generated). If Render adds a suffix to the service names, update the two `onrender.com` URLs in `render.yaml`.
+
+Free-tier note: the API sleeps after ~15 min idle (first request then takes 30–60 s). A free uptime monitor
+pinging `/health` every 10 minutes keeps it awake.
 
 ## How this repo is built
 Spec-driven: [specs/SPEC.md](specs/SPEC.md) (what) → [specs/PLAN.md](specs/PLAN.md) (how) →
