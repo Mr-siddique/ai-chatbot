@@ -1,0 +1,29 @@
+# deps & builds
+node_modules/
+dist/
+build/
+coverage/
+.vite/
+
+# env
+.env
+.env.*
+!.env.example
+!client/.env.development
+!client/.env.production
+
+# logs & OS
+*.log
+npm-debug.log*
+.DS_Store
+
+# editors
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# claude code local overrides
+.claude/settings.local.json
+
+# deploy tooling
+.vercel
