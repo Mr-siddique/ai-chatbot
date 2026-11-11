@@ -13,7 +13,7 @@ describe('loadConfig', () => {
 
     expect(config.nodeEnv).toBe('development');
     expect(config.port).toBe(4000);
-    expect(config.jwt.expiresIn).toBe('7d');
+    expect(config.jwt.expiresInSeconds).toBe(7 * 86_400);
     expect(config.ai.model).toBe('nvidia/nemotron-3.5-lightning:free');
     expect(config.ai.timeoutMs).toBe(30_000);
     expect(config.clientOrigins).toEqual(['http://localhost:5173']);
@@ -28,6 +28,22 @@ describe('loadConfig', () => {
 
     expect(config.port).toBe(8080);
     expect(config.clientOrigins).toEqual(['https://a.example', 'https://b.example']);
+  });
+
+  it('parses JWT_EXPIRES_IN durations into seconds', () => {
+    const seconds = (value: string) => loadConfig({ ...required, JWT_EXPIRES_IN: value }).jwt.expiresInSeconds;
+
+    expect(seconds('45s')).toBe(45);
+    expect(seconds('30m')).toBe(1800);
+    expect(seconds('12h')).toBe(43_200);
+    expect(seconds('2w')).toBe(1_209_600);
+    expect(seconds('3600')).toBe(3600);
+  });
+
+  it('rejects invalid JWT_EXPIRES_IN values', () => {
+    for (const value of ['7 days', 'abc', '0d', '-1h', '1y']) {
+      expect(() => loadConfig({ ...required, JWT_EXPIRES_IN: value }), value).toThrow(ConfigError);
+    }
   });
 
   it('picks bcrypt rounds per environment', () => {

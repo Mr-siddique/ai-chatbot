@@ -5,12 +5,26 @@ export type NodeEnv = (typeof NODE_ENVS)[number];
 
 const required = (name: string) => z.string({ error: `${name} is required` }).min(1, `${name} is required`);
 
+const DURATION_UNITS_S = { s: 1, m: 60, h: 3600, d: 86_400, w: 604_800 } as const;
+
+/** "7d" | "12h" | "30m" | "45s" | "3600" (seconds) -> seconds */
+const duration = z
+  .string()
+  .regex(/^\d+[smhdw]?$/, 'must be a number with an optional unit s, m, h, d or w (e.g. 7d)')
+  .transform((value) => {
+    const unit = value.at(-1) as keyof typeof DURATION_UNITS_S;
+    return unit in DURATION_UNITS_S
+      ? Number.parseInt(value, 10) * DURATION_UNITS_S[unit]
+      : Number.parseInt(value, 10);
+  })
+  .refine((seconds) => seconds > 0, 'must be greater than 0');
+
 const envSchema = z.object({
   NODE_ENV: z.enum(NODE_ENVS).default('development'),
   PORT: z.coerce.number().int().positive().default(4000),
   MONGODB_URI: required('MONGODB_URI'),
   JWT_SECRET: required('JWT_SECRET').min(32, 'JWT_SECRET must be at least 32 characters'),
-  JWT_EXPIRES_IN: z.string().min(1).default('7d'),
+  JWT_EXPIRES_IN: duration.prefault('7d'),
   CLIENT_ORIGIN: z.string().default('http://localhost:5173'),
   OPENROUTER_API_KEY: required('OPENROUTER_API_KEY'),
   OPENROUTER_MODEL: z.string().min(1).default('nvidia/nemotron-3.5-lightning:free'),
@@ -29,7 +43,7 @@ export type Config = {
   isProd: boolean;
   port: number;
   mongodbUri: string;
-  jwt: { secret: string; expiresIn: string };
+  jwt: { secret: string; expiresInSeconds: number };
   bcryptRounds: number;
   clientOrigins: string[];
   ai: { apiKey: string; model: string; timeoutMs: number; contextMessages: number; referer: string };
@@ -61,7 +75,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     isProd: e.NODE_ENV === 'production',
     port: e.PORT,
     mongodbUri: e.MONGODB_URI,
-    jwt: { secret: e.JWT_SECRET, expiresIn: e.JWT_EXPIRES_IN },
+    jwt: { secret: e.JWT_SECRET, expiresInSeconds: e.JWT_EXPIRES_IN },
     bcryptRounds: BCRYPT_ROUNDS[e.NODE_ENV],
     clientOrigins,
     ai: {

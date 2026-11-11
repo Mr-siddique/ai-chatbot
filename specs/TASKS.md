@@ -8,7 +8,7 @@ Work top to bottom, one task at a time. Tick a box only when its tests pass. IDs
 
 ## 2. Auth (server)
 - [x] **2.1** `AppError` + `errorHandler` (contract error shape)
-- [ ] **2.2** `User` model, `jwt.ts`, cookie options helper — AUTH-04
+- [x] **2.2** `User` model, `jwt.ts`, cookie options helper — AUTH-04
 - [ ] **2.3** `POST /auth/signup` — AUTH-01, AUTH-04
 - [ ] **2.4** `POST /auth/login` — AUTH-02
 - [ ] **2.5** `requireAuth` + `GET /auth/me` + `POST /auth/logout` — AUTH-03, AUTH-05, AUTH-06
@@ -39,6 +39,9 @@ Work top to bottom, one task at a time. Tick a box only when its tests pass. IDs
 
 ## Log
 Newest first. One line per session: what was done, anything half-finished or blocked, gotchas.
+- 2026-11-11 — 2.2 done: User model (passwordHash select:false, toPublicUser), jwt sign/verify
+  (HS256 pinned), auth cookie helpers; 45 tests green. JWT_EXPIRES_IN parsed to seconds in config (zod 4:
+  use `.prefault()` so defaults go through transforms). Next: 2.3.
 - 2026-11-11 — 2.1 done: AppError + errorHandler + 404 catch-all, 24 tests green. Malformed/oversized
   JSON → 400 VALIDATION_ERROR; unexpected errors → generic 500 (message as details only outside prod). Next: 2.2.
 - 2026-11-11 — 1.2 done: client scaffold (React 19, Vite 8, Vitest 5, MSW 3), 3 tests green, dev proxy

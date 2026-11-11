@@ -55,7 +55,7 @@ client/src/
 | `PORT` | `4000` | |
 | `MONGODB_URI` | — (required) | |
 | `JWT_SECRET` | — (required, ≥ 32 chars) | |
-| `JWT_EXPIRES_IN` | `7d` | |
+| `JWT_EXPIRES_IN` | `7d` | number + `s`/`m`/`h`/`d`/`w`; also the cookie Max-Age |
 | `CLIENT_ORIGIN` | `http://localhost:5173` | CORS fallback if not behind the proxy |
 | `OPENROUTER_API_KEY` | — (required) | |
 | `OPENROUTER_MODEL` | `nvidia/nemotron-3.5-lightning:free` | |
