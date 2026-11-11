@@ -40,13 +40,32 @@ cd client && cp .env.example .env && npm install && npm run dev   # :5173
 
 ## Tests
 ```bash
-cd server && npm test
-cd client && npm test
+cd server && npm test        # unit + API tests (in-memory MongoDB, fake AI)
+cd client && npm test        # component tests (mocked API)
+cd server && npm run test:live   # optional: one real OpenRouter call (uses free quota)
 ```
 
 ## Environment variables
 See `server/.env.example`, `client/.env.example`, root `.env.example`, and the table in
 [specs/PLAN.md](specs/PLAN.md#configuration).
+
+## Environments (dev / prod)
+`NODE_ENV` on the server and the Vite mode on the client switch behaviour; the code is the same.
+
+| | development | production | test |
+|---|---|---|---|
+| Run | `npm run dev` (both) | `npm run build && npm start` · `docker compose up` | `npm test` |
+| Auth cookie `Secure` | off (works on http://localhost) | on | off |
+| bcrypt cost | 10 | 12 | 4 |
+| Logs | readable, colored, `debug` | JSON lines, `info` | silent |
+| 500 error details in response | message included | hidden | message included |
+| `trust proxy` (real client IP behind Render/nginx) | off | on | off |
+| Rate limiting | on | on | off (tests opt in) |
+| Client API base | `client/.env.development` → `/api` via Vite proxy | `client/.env.production` → `/api` via nginx / Vercel rewrite | mocked |
+
+- Override the log level with `LOG_LEVEL` (e.g. `LOG_LEVEL=debug` in production while investigating).
+- Missing or invalid env vars stop the server at startup with a list of every problem.
+- Every response carries an `X-Request-Id`; the same id is in that request's log line.
 
 ## API summary
 | Method | Path | Auth |

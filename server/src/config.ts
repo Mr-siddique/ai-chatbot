@@ -3,6 +3,12 @@ import { z } from 'zod';
 const NODE_ENVS = ['development', 'test', 'production'] as const;
 export type NodeEnv = (typeof NODE_ENVS)[number];
 
+const LOG_LEVELS = ['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'] as const;
+export type LogLevel = (typeof LOG_LEVELS)[number];
+
+/** BON-03: default log level per environment (LOG_LEVEL overrides). */
+const DEFAULT_LOG_LEVEL: Record<NodeEnv, LogLevel> = { development: 'debug', test: 'silent', production: 'info' };
+
 const required = (name: string) => z.string({ error: `${name} is required` }).min(1, `${name} is required`);
 
 const DURATION_UNITS_S = { s: 1, m: 60, h: 3600, d: 86_400, w: 604_800 } as const;
@@ -22,6 +28,7 @@ const duration = z
 const envSchema = z.object({
   NODE_ENV: z.enum(NODE_ENVS).default('development'),
   PORT: z.coerce.number().int().positive().default(4000),
+  LOG_LEVEL: z.enum(LOG_LEVELS).optional(),
   MONGODB_URI: required('MONGODB_URI'),
   JWT_SECRET: required('JWT_SECRET').min(32, 'JWT_SECRET must be at least 32 characters'),
   JWT_EXPIRES_IN: duration.prefault('7d'),
@@ -42,6 +49,7 @@ export type Config = {
   nodeEnv: NodeEnv;
   isProd: boolean;
   port: number;
+  logLevel: LogLevel;
   mongodbUri: string;
   jwt: { secret: string; expiresInSeconds: number };
   bcryptRounds: number;
@@ -75,6 +83,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     nodeEnv: e.NODE_ENV,
     isProd: e.NODE_ENV === 'production',
     port: e.PORT,
+    logLevel: e.LOG_LEVEL ?? DEFAULT_LOG_LEVEL[e.NODE_ENV],
     mongodbUri: e.MONGODB_URI,
     jwt: { secret: e.JWT_SECRET, expiresInSeconds: e.JWT_EXPIRES_IN },
     bcryptRounds: BCRYPT_ROUNDS[e.NODE_ENV],

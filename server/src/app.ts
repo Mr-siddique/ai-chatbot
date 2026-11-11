@@ -6,6 +6,7 @@ import type { Logger } from 'pino';
 import type { Config } from './config.js';
 import { createLogger } from './lib/logger.js';
 import { createErrorHandler, notFoundHandler } from './middleware/errorHandler.js';
+import { createRequestLogger } from './middleware/requestLogger.js';
 import { createAuthRouter } from './routes/auth.js';
 import { createChatRouter } from './routes/chat.js';
 import { createOpenRouterAi, type AiService } from './services/ai.js';
@@ -28,6 +29,7 @@ export function createApp({ config, logger = createLogger(config), ai = createOp
   }
 
   app.disable('x-powered-by');
+  app.use(createRequestLogger(logger));
   app.use(helmet());
   app.use(cors({ origin: config.clientOrigins, credentials: true }));
   app.use(express.json({ limit: '16kb' }));

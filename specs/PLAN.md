@@ -65,6 +65,7 @@ client/src/
 |-----|---------|-------|
 | `NODE_ENV` | `development` | `production` → secure cookie, JSON logs, no error details, `trust proxy` |
 | `PORT` | `4000` | |
+| `LOG_LEVEL` | `debug` dev · `info` prod · `silent` test | optional override |
 | `MONGODB_URI` | — (required) | |
 | `JWT_SECRET` | — (required, ≥ 32 chars) | |
 | `JWT_EXPIRES_IN` | `7d` | number + `s`/`m`/`h`/`d`/`w`; also the cookie Max-Age |
