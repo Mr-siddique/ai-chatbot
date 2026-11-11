@@ -3,6 +3,7 @@ import { z } from 'zod';
 import type { Config } from '../config.js';
 import { clearAuthCookie, setAuthCookie } from '../lib/authCookie.js';
 import { signToken } from '../lib/jwt.js';
+import { createAuthLimiter } from '../middleware/rateLimit.js';
 import { authUser, requireAuth } from '../middleware/requireAuth.js';
 import { toPublicUser } from '../models/User.js';
 import * as authService from '../services/auth.js';
@@ -32,9 +33,11 @@ const loginSchema = z.object({
 
 export function createAuthRouter({ config }: { config: Config }): Router {
   const router = Router();
+  // BON-02: one per-IP budget shared by signup and login (slows password guessing).
+  const authLimiter = createAuthLimiter(config);
 
   // AUTH-01: sign up and start a session.
-  router.post('/signup', async (req, res) => {
+  router.post('/signup', authLimiter, async (req, res) => {
     const input = signupSchema.parse(req.body); // unknown fields are stripped
     const user = await authService.signup(input, config);
 
@@ -43,7 +46,7 @@ export function createAuthRouter({ config }: { config: Config }): Router {
   });
 
   // AUTH-02: log in and start a session.
-  router.post('/login', async (req, res) => {
+  router.post('/login', authLimiter, async (req, res) => {
     const input = loginSchema.parse(req.body);
     const user = await authService.login(input, config);
 

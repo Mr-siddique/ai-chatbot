@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { isValidObjectId } from 'mongoose';
 import { z } from 'zod';
 import type { Config } from '../config.js';
+import { createChatLimiter } from '../middleware/rateLimit.js';
 import { authUser, requireAuth } from '../middleware/requireAuth.js';
 import type { ChatService } from '../services/chat.js';
 
@@ -26,8 +27,8 @@ export function createChatRouter({ config, chat }: { config: Config; chat: ChatS
   // AUTH-05: every chat route requires a session.
   router.use(requireAuth(config));
 
-  // CHAT-01: send a message, get the assistant's reply.
-  router.post('/send', async (req, res) => {
+  // CHAT-01: send a message, get the assistant's reply. BON-02: limited per user.
+  router.post('/send', createChatLimiter(config), async (req, res) => {
     const input = sendSchema.parse(req.body);
     const result = await chat.send(authUser(req).id, input);
     res.json(result);

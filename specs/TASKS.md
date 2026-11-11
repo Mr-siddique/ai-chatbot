@@ -29,7 +29,7 @@ Work top to bottom, one task at a time. Tick a box only when its tests pass. IDs
 
 ## 5. Bonus
 - [x] **5.1** Typing indicator — BON-01
-- [ ] **5.2** Rate limiting + client 429 message — BON-02
+- [x] **5.2** Rate limiting + client 429 message — BON-02
 - [ ] **5.3** Env-based config + fail-fast validation — BON-03
 
 ## 6. Ship
@@ -39,6 +39,10 @@ Work top to bottom, one task at a time. Tick a box only when its tests pass. IDs
 
 ## Log
 Newest first. One line per session: what was done, anything half-finished or blocked, gotchas.
+- 2026-11-12 — 5.2 done: express-rate-limit v8 — /chat/send per user (RATE_LIMIT_MAX per window), signup+login
+  share a per-IP 15-min budget (AUTH_RATE_LIMIT_MAX); 429 RATE_LIMITED in contract shape + RateLimit/Retry-After
+  headers; off when NODE_ENV=test (config.rateLimit.enabled). Client shows the server message (no auto-retry).
+  Live check: 10×401 then 429. Server 170 / client 97 tests green. Next: 5.3.
 - 2026-11-12 — 5.1 done: TypingIndicator (assistant-style bubble, 3 bouncing dots aria-hidden, role=status
   "Assistant is typing…", no animation under prefers-reduced-motion) replaces the plain status. 94 client tests
   green. Next: 5.2.

@@ -47,7 +47,8 @@ export type Config = {
   bcryptRounds: number;
   clientOrigins: string[];
   ai: { apiKey: string; model: string; timeoutMs: number; contextMessages: number; referer: string };
-  rateLimit: { windowMs: number; max: number; authMax: number };
+  /** BON-02. Off in tests unless a test turns it on. */
+  rateLimit: { enabled: boolean; windowMs: number; max: number; authMax: number };
 };
 
 export class ConfigError extends Error {
@@ -86,6 +87,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       referer: clientOrigins[0] ?? 'http://localhost:5173',
     },
     rateLimit: {
+      enabled: e.NODE_ENV !== 'test',
       windowMs: e.RATE_LIMIT_WINDOW_MS,
       max: e.RATE_LIMIT_MAX,
       authMax: e.AUTH_RATE_LIMIT_MAX,
