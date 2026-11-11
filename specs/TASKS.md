@@ -9,7 +9,7 @@ Work top to bottom, one task at a time. Tick a box only when its tests pass. IDs
 ## 2. Auth (server)
 - [x] **2.1** `AppError` + `errorHandler` (contract error shape)
 - [x] **2.2** `User` model, `jwt.ts`, cookie options helper — AUTH-04
-- [ ] **2.3** `POST /auth/signup` — AUTH-01, AUTH-04
+- [x] **2.3** `POST /auth/signup` — AUTH-01, AUTH-04
 - [ ] **2.4** `POST /auth/login` — AUTH-02
 - [ ] **2.5** `requireAuth` + `GET /auth/me` + `POST /auth/logout` — AUTH-03, AUTH-05, AUTH-06
 
@@ -39,6 +39,9 @@ Work top to bottom, one task at a time. Tick a box only when its tests pass. IDs
 
 ## Log
 Newest first. One line per session: what was done, anything half-finished or blocked, gotchas.
+- 2026-11-11 — 2.3 done: POST /auth/signup (routes/auth.ts + services/auth.ts), 60 tests green, smoke-tested on
+  local Mongo. Password capped at 72 bytes (bcrypt limit) — SPEC AUTH-01 updated. Duplicates decided by the
+  unique index (race-safe), not a pre-check. Next: 2.4.
 - 2026-11-11 — 2.2 done: User model (passwordHash select:false, toPublicUser), jwt sign/verify
   (HS256 pinned), auth cookie helpers; 45 tests green. JWT_EXPIRES_IN parsed to seconds in config (zod 4:
   use `.prefault()` so defaults go through transforms). Next: 2.3.

@@ -7,7 +7,7 @@ Source: challenge brief. **M** = must · **B** = bonus · **S** = our addition.
 ## Auth
 | ID | Requirement / acceptance criteria | Pri |
 |----|-----------------------------------|-----|
-| AUTH-01 | `POST /auth/signup {name, email, password}` → `201 {user}` + sets `token` cookie. Duplicate email (case-insensitive) → `409 EMAIL_TAKEN`. Bad email / empty name / password < 8 → `400`. | M |
+| AUTH-01 | `POST /auth/signup {name, email, password}` → `201 {user}` + sets `token` cookie. Duplicate email (case-insensitive) → `409 EMAIL_TAKEN`. Bad email, name not 1–80 chars, or password not 8–72 bytes (bcrypt ignores bytes after 72) → `400`; nothing saved. Unknown body fields are ignored. | M |
 | AUTH-02 | `POST /auth/login {email, password}` → `200 {user}` + cookie. Wrong password and unknown email return the **same** `401 INVALID_CREDENTIALS`. | M |
 | AUTH-03 | `POST /auth/logout` → `204`, clears cookie; afterwards `/auth/me` → `401`. | M |
 | AUTH-04 | Passwords stored as bcrypt hashes. `password`/`passwordHash` never appear in any response. | M |

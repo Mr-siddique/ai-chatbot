@@ -6,6 +6,7 @@ import type { Logger } from 'pino';
 import type { Config } from './config.js';
 import { createLogger } from './lib/logger.js';
 import { createErrorHandler, notFoundHandler } from './middleware/errorHandler.js';
+import { createAuthRouter } from './routes/auth.js';
 
 export type AppDeps = {
   config: Config;
@@ -30,6 +31,8 @@ export function createApp({ config, logger = createLogger(config) }: AppDeps): E
   app.get('/health', (_req, res) => {
     res.json({ status: 'ok' });
   });
+
+  app.use('/auth', createAuthRouter({ config }));
 
   app.use(notFoundHandler);
   app.use(createErrorHandler({ logger, exposeDetails: !config.isProd }));
