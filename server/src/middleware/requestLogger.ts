@@ -30,24 +30,6 @@ export function createRequestLogger(logger: Logger): RequestHandler {
     customSuccessMessage: (req, res, responseTime) =>
       `${req.method} ${req.url} ${res.statusCode} ${Math.round(responseTime)}ms`,
     customErrorMessage: (req, res) => `${req.method} ${req.url} ${res.statusCode}`,
-    // TEMPORARY diagnostic (remove after TRUST_PROXY is set): counts and
-    // booleans only — never IP addresses.
-    customProps: (req) => {
-      const xff = req.headers['x-forwarded-for'];
-      const entries = typeof xff === 'string' ? xff.split(',').length : 0;
-      const first = typeof xff === 'string' ? xff.split(',')[0]?.trim() : undefined;
-      const trueClient = req.headers['true-client-ip'];
-      const cfClient = req.headers['cf-connecting-ip'];
-      return {
-        proxyDiag: {
-          xffEntries: entries,
-          hasTrueClientIp: typeof trueClient === 'string',
-          hasCfConnectingIp: typeof cfClient === 'string',
-          trueClientIpEqualsFirstXff: typeof trueClient === 'string' && trueClient === first,
-          cfEqualsTrueClient: typeof trueClient === 'string' && trueClient === cfClient,
-        },
-      };
-    },
     // Keep request/response records small: no headers, no bodies.
     serializers: {
       req: (req: { id: unknown; method: string; url: string }) => ({ id: req.id, method: req.method, url: req.url }),

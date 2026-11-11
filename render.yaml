@@ -34,6 +34,11 @@ services:
         value: nvidia/nemotron-3.5-lightning:free
       - key: AI_TIMEOUT_MS
         value: "30000"
+      # Proxy hops in front of the API. Browser traffic arrives via the static
+      # site's /api rewrite with 6 X-Forwarded-For entries (client first); direct
+      # calls have 3 and fall back to the leftmost. Measured 2026-11-13.
+      - key: TRUST_PROXY
+        value: "6"
       # The public site URL (CORS allow-list + OpenRouter attribution).
       - key: CLIENT_ORIGIN
         value: https://ai-chatbot-web-zikz.onrender.com
