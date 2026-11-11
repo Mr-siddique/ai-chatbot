@@ -22,7 +22,7 @@ Work top to bottom, one task at a time. Tick a box only when its tests pass. IDs
 
 ## 4. Client
 - [x] **4.1** Axios client + `AuthContext` (`/auth/me` on boot) + protected routes — UI-05, UI-06, AUTH-05
-- [ ] **4.2** Login + Signup pages — UI-01
+- [x] **4.2** Login + Signup pages — UI-01
 - [ ] **4.3** Chat layout: header with logout, sidebar, thread, input; responsive CSS — UI-07, UI-08
 - [ ] **4.4** Conversation list + `/c/:id` loading — UI-04
 - [ ] **4.5** Send flow: optimistic message, error + retry, new-chat navigation — UI-02, UI-03
@@ -39,6 +39,10 @@ Work top to bottom, one task at a time. Tick a box only when its tests pass. IDs
 
 ## Log
 Newest first. One line per session: what was done, anything half-finished or blocked, gotchas.
+- 2026-11-12 — 4.2 done: Login + Signup pages (useMutation, client checks mirroring AUTH-01, server field
+  errors under fields, EMAIL_TAKEN → "Log in instead", focus first error), TextField component, PublicOnly
+  returns users to their original page via safeRedirectPath (mutation-tested). 49 client tests green.
+  Gotcha: react-hooks/refs lint rejects refs grouped in an object — use one useRef per field. Next: 4.3.
 - 2026-11-12 — Added TanStack Query (v5) for server data; /auth/me now cached under queryKeys.me and
   AuthProvider is a thin Context over it. Logout/expiry remove all other cached queries. 25 client tests green.
 - 2026-11-12 — Pages lazy-loaded (React.lazy + Suspense in App.tsx); pages live in src/pages/ with default

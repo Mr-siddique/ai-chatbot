@@ -1,7 +1,7 @@
 import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClientProvider, type QueryClient } from '@tanstack/react-query';
-import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
+import { MemoryRouter, Route, Routes, useLocation, type InitialEntry } from 'react-router';
 import { AppRoutes } from '../src/App.tsx';
 import { createQueryClient } from '../src/api/queryClient.ts';
 import { AuthProvider } from '../src/auth/AuthProvider.tsx';
@@ -23,7 +23,7 @@ export function createTestQueryClient(): QueryClient {
 }
 
 /** Renders the whole app (cache + auth + routes) at `path`, like a page load. */
-export function renderApp(path = '/', queryClient = createTestQueryClient()) {
+export function renderApp(path: InitialEntry = '/', queryClient = createTestQueryClient()) {
   const user = userEvent.setup();
   const view = render(
     <QueryClientProvider client={queryClient}>
