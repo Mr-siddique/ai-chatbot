@@ -3,7 +3,8 @@
 A minimal full-stack AI customer support chat app. Users sign up / log in (JWT + bcrypt), chat with
 an AI assistant (OpenRouter), and revisit past conversations stored in MongoDB.
 
-> **Status:** in progress — see [specs/TASKS.md](specs/TASKS.md).
+> **Status:** complete — every requirement in [specs/SPEC.md](specs/SPEC.md) is implemented and verified
+> (318 automated tests; Docker and the live deployment checked end to end).
 > **Live demo:** https://ai-chatbot-web-zikz.onrender.com
 > (free hosting: the API sleeps when idle, so the first request after a while can take 30–60 s)
 

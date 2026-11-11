@@ -35,10 +35,14 @@ Work top to bottom, one task at a time. Tick a box only when its tests pass. IDs
 ## 6. Ship
 - [x] **6.1** Dockerfiles + nginx.conf + docker-compose.yml; manual check: signup → chat — OPS-01, 02, 03
 - [x] **6.2** Deploy (Render + Vercel + Atlas) and add the link to the README — OPS-05
-- [ ] **6.3** Final README pass + `/verify` over the whole spec — OPS-04
+- [x] **6.3** Final README pass + `/verify` over the whole spec — OPS-04
 
 ## Log
 Newest first. One line per session: what was done, anything half-finished or blocked, gotchas.
+- 2026-11-13 — 6.3 done: final verify. Server 207 + client 111 tests green; typecheck/lint/build clean. Every
+  AUTH/CHAT/AI/UI/BON requirement has named tests; OPS-01..05 verified by running (Docker at :8080, live Render site).
+  Rules: chat queries userId-scoped (query guard), no web storage, no secrets in git history, env vars documented
+  (added missing TRUST_PROXY to server/.env.example). README status → complete. All tasks done.
 - 2026-11-13 — 6.1 done: server/Dockerfile (multi-stage node:22-slim, non-root, HEALTHCHECK), client/Dockerfile
   (Vite build → nginx:1.27-alpine), client/nginx.conf (/api/ proxy, 90 s read timeout, SPA fallback, asset caching),
   docker-compose.yml (mongo healthcheck + volume, COOKIE_SECURE=false, TRUST_PROXY=1). Verified at :8080: signup
