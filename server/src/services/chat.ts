@@ -2,12 +2,24 @@ import { Types } from 'mongoose';
 import type { Logger } from 'pino';
 import type { Config } from '../config.js';
 import { AppError } from '../lib/AppError.js';
-import { Conversation, TITLE_MAX_LENGTH, toPublicConversation, type PublicConversation } from '../models/Conversation.js';
+import {
+  Conversation,
+  PREVIEW_MAX_LENGTH,
+  TITLE_MAX_LENGTH,
+  toPublicConversation,
+  type PublicConversation,
+} from '../models/Conversation.js';
 import { CHRONOLOGICAL, Message, toPublicMessage, type PublicMessage } from '../models/Message.js';
 import { AiError, type AiService, type ChatTurn } from './ai.js';
 
 export type SendInput = { message: string; conversationId?: string | undefined };
-export type SendResult = { conversationId: string; userMessage: PublicMessage; assistantMessage: PublicMessage };
+export type SendResult = {
+  conversationId: string;
+  /** CHAT-01: the updated summary, so the client can update its sidebar without a refetch. */
+  conversation: PublicConversation;
+  userMessage: PublicMessage;
+  assistantMessage: PublicMessage;
+};
 export type ConversationWithMessages = { conversation: PublicConversation; messages: PublicMessage[] };
 
 /** CHAT-06: first 60 characters of the first message, whitespace collapsed. */
@@ -15,6 +27,13 @@ export function titleFromMessage(message: string): string {
   const collapsed = message.replace(/\s+/g, ' ').trim();
   // Slice by code points so an emoji is never cut in half.
   return Array.from(collapsed).slice(0, TITLE_MAX_LENGTH).join('').trim();
+}
+
+/** CHAT-03: the latest message for the sidebar, whitespace collapsed, ≤ 100 chars. */
+export function previewFromMessage(message: string): string {
+  const characters = Array.from(message.replace(/\s+/g, ' ').trim());
+  if (characters.length <= PREVIEW_MAX_LENGTH) return characters.join('');
+  return `${characters.slice(0, PREVIEW_MAX_LENGTH - 1).join('').trimEnd()}…`;
 }
 
 type ChatServiceDeps = {
@@ -82,7 +101,10 @@ export function createChatService({ ai, config, logger }: ChatServiceDeps) {
         throw err;
       }
 
-      const conversation = existing ?? new Conversation({ userId, title: titleFromMessage(input.message) });
+      // CHAT-03: the sidebar shows the latest message, i.e. this reply.
+      const lastMessagePreview = previewFromMessage(reply.content);
+      const conversation =
+        existing ?? new Conversation({ userId, title: titleFromMessage(input.message), lastMessagePreview });
       if (!existing) await conversation.save();
 
       try {
@@ -93,15 +115,17 @@ export function createChatService({ ai, config, logger }: ChatServiceDeps) {
           { conversationId: conversation._id, userId, role: 'assistant', content: reply.content },
         ]);
 
-        // Move the conversation to the top of the history list (CHAT-03).
-        await Conversation.updateOne(
+        // CHAT-03: move the conversation to the top of the list and show the latest message.
+        const updated = await Conversation.findOneAndUpdate(
           { _id: conversation._id, userId },
-          { $set: { updatedAt: new Date() } },
-          { timestamps: false },
-        );
+          { $set: { updatedAt: new Date(), lastMessagePreview } },
+          { timestamps: false, returnDocument: 'after' },
+        ).lean();
+        if (!updated) throw new Error('Conversation disappeared while saving messages');
 
         return {
           conversationId: conversation.id,
+          conversation: toPublicConversation(updated),
           userMessage: toPublicMessage(userMessage!),
           assistantMessage: toPublicMessage(assistantMessage!),
         };

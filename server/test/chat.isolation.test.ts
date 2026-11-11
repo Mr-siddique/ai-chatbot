@@ -123,7 +123,8 @@ describe('CHAT-05: every chat query is scoped by userId', () => {
     await bob.agent.get(`/chat/history/${conversationId}`).expect(200);
     await bob.agent.get(`/chat/history/${aliceConversationId}`).expect(404);
 
-    const READS_AND_WRITES = /^(find|findOne|updateOne|updateMany|deleteOne|deleteMany|countDocuments|aggregate)$/;
+    const READS_AND_WRITES =
+      /^(find|findOne|findOneAndUpdate|findOneAndDelete|updateOne|updateMany|deleteOne|deleteMany|countDocuments|aggregate)$/;
     const chatQueries = queries.filter(
       (q) => ['conversations', 'messages'].includes(q.collection) && READS_AND_WRITES.test(q.method),
     );

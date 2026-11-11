@@ -6,7 +6,7 @@ import { createApp } from '../src/app.js';
 import { Conversation } from '../src/models/Conversation.js';
 import { CHRONOLOGICAL, Message } from '../src/models/Message.js';
 import { User } from '../src/models/User.js';
-import { titleFromMessage } from '../src/services/chat.js';
+import { previewFromMessage, titleFromMessage } from '../src/services/chat.js';
 import { signedUpAgent } from './helpers/auth.js';
 import { testConfig } from './helpers/config.js';
 import { useTestDb } from './helpers/db.js';
@@ -44,6 +44,13 @@ describe('POST /chat/send — new conversation', () => {
     expect(res.status).toBe(200);
     expect(res.body).toEqual({
       conversationId: expect.any(String),
+      conversation: {
+        id: res.body.conversationId,
+        title: 'How do I reset my password?',
+        lastMessagePreview: 'Happy to help!',
+        createdAt: ISO,
+        updatedAt: ISO,
+      },
       userMessage: {
         id: expect.any(String),
         conversationId: res.body.conversationId,
@@ -167,6 +174,50 @@ describe('POST /chat/send — existing conversation', () => {
   });
 });
 
+describe('POST /chat/send — sidebar summary (CHAT-03)', () => {
+  it('CHAT-03: the preview is the latest message and updates on every send; the title never changes', async () => {
+    const { agent } = await signedUpAgent(app);
+    fake.replyWith('First answer');
+    const first = await agent.post('/chat/send').send({ message: 'hi' }).expect(200);
+    expect(first.body.conversation).toMatchObject({ title: 'hi', lastMessagePreview: 'First answer' });
+
+    fake.replyWith('Second answer');
+    const second = await agent
+      .post('/chat/send')
+      .send({ conversationId: first.body.conversationId, message: 'lml' })
+      .expect(200);
+
+    expect(second.body.conversation).toMatchObject({ title: 'hi', lastMessagePreview: 'Second answer' });
+    const list = await agent.get('/chat/history').expect(200);
+    expect(list.body.conversations[0]).toMatchObject({ title: 'hi', lastMessagePreview: 'Second answer' });
+  });
+
+  it('CHAT-01: the returned summary matches what GET /chat/history returns', async () => {
+    const { agent } = await signedUpAgent(app);
+    const sent = await agent.post('/chat/send').send({ message: 'Same data?' }).expect(200);
+
+    const list = await agent.get('/chat/history').expect(200);
+
+    expect(list.body.conversations[0]).toEqual(sent.body.conversation);
+  });
+
+  it('CHAT-03: an existing conversation’s updatedAt in the response moves forward', async () => {
+    const { agent } = await signedUpAgent(app);
+    const first = await agent.post('/chat/send').send({ message: 'One' }).expect(200);
+    await new Promise((resolve) => setTimeout(resolve, 5));
+
+    const second = await agent
+      .post('/chat/send')
+      .send({ conversationId: first.body.conversationId, message: 'Two' })
+      .expect(200);
+
+    expect(Date.parse(second.body.conversation.updatedAt)).toBeGreaterThan(
+      Date.parse(first.body.conversation.updatedAt),
+    );
+    expect(second.body.conversation.createdAt).toBe(first.body.conversation.createdAt);
+  });
+});
+
 describe('POST /chat/send — validation', () => {
   it.each([
     ['an empty message', { message: '' }, 'message'],
@@ -241,6 +292,24 @@ describe('POST /chat/send — AI failures', () => {
 
     expect(res.status).toBe(500);
     expect(res.body.error.code).toBe('INTERNAL');
+  });
+});
+
+describe('previewFromMessage', () => {
+  it('collapses whitespace', () => {
+    expect(previewFromMessage('Step 1:\n  open   the page')).toBe('Step 1: open the page');
+  });
+
+  it('keeps short messages whole and cuts long ones to 100 characters with …', () => {
+    expect(previewFromMessage('x'.repeat(100))).toBe('x'.repeat(100));
+    const long = previewFromMessage(`${'word '.repeat(40)}end`);
+    expect(Array.from(long)).toHaveLength(100);
+    expect(long.endsWith('…')).toBe(true);
+  });
+
+  it('never cuts an emoji in half', () => {
+    const preview = previewFromMessage(`${'x'.repeat(98)}😀😀😀`);
+    expect(preview).toBe(`${'x'.repeat(98)}😀…`);
   });
 });
 

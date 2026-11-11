@@ -46,6 +46,22 @@ describe.each(Object.entries(expected))('NODE_ENV=%s (BON-03)', (nodeEnv, want) 
   });
 });
 
+describe('COOKIE_SECURE override', () => {
+  it('defaults to on in production only', () => {
+    expect(testConfig({ NODE_ENV: 'production' }).cookieSecure).toBe(true);
+    expect(testConfig({ NODE_ENV: 'development' }).cookieSecure).toBe(false);
+  });
+
+  it('can be turned off for plain-http docker compose, or on anywhere', () => {
+    expect(testConfig({ NODE_ENV: 'production', COOKIE_SECURE: 'false' }).cookieSecure).toBe(false);
+    expect(testConfig({ NODE_ENV: 'development', COOKIE_SECURE: 'true' }).cookieSecure).toBe(true);
+  });
+
+  it('rejects anything but true/false', () => {
+    expect(() => testConfig({ COOKIE_SECURE: 'yes' })).toThrow(/COOKIE_SECURE/);
+  });
+});
+
 describe('LOG_LEVEL override (BON-03)', () => {
   it('overrides the per-environment default', () => {
     expect(testConfig({ NODE_ENV: 'production', LOG_LEVEL: 'warn' }).logLevel).toBe('warn');

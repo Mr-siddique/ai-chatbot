@@ -34,7 +34,19 @@ try {
 }
 logger.info('Connected to MongoDB');
 
-const server = createApp({ config, logger }).listen(config.port, () => {
+// Express 5 passes listen failures (e.g. port already in use) to this callback
+// instead of throwing. Ignoring it leaves a process that serves nothing.
+const server = createApp({ config, logger }).listen(config.port, (err?: Error) => {
+  if (err) {
+    const inUse = (err as NodeJS.ErrnoException).code === 'EADDRINUSE';
+    logger.fatal(
+      inUse
+        ? `Port ${config.port} is already in use. Stop the other server (or set PORT) and try again.`
+        : `Could not start the server: ${err.message}`,
+    );
+    void disconnectDb().finally(() => process.exit(1));
+    return;
+  }
   logger.info(`Server listening on http://localhost:${config.port} (${config.nodeEnv})`);
 });
 

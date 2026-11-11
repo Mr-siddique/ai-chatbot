@@ -104,7 +104,7 @@ describe('Opening a conversation (UI-04, UI-03)', () => {
   it('UI-03: keeps line breaks in messages', async () => {
     await renderChat('/c/c1');
 
-    const reply = await screen.findByText(/Here is how:/);
+    const reply = await within(await screen.findByRole('log', { name: 'Messages' })).findByText(/Here is how:/);
     expect(reply.textContent).toBe('Here is how:\n1. Open the help page\n2. Choose "Refund"');
   });
 

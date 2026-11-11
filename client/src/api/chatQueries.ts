@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getConversation, listConversations, sendMessage } from './chat.ts';
-import type { ConversationResponse } from './types.ts';
+import type { ConversationResponse, ConversationSummary } from './types.ts';
 import { queryKeys } from './queryClient.ts';
 
 /** UI-04: the sidebar list (GET /chat/history), newest activity first. */
@@ -18,36 +18,30 @@ export function useConversation(conversationId: string | undefined) {
 }
 
 /**
- * UI-03/UI-04: send a message. Cache updates live here (not in mutate()
- * callbacks) so they still happen if the user navigates away while the
- * assistant is replying.
+ * UI-03/UI-04: send a message. The response carries the updated conversation
+ * summary, so the cache is updated directly: no refetch of the list or the
+ * conversation. This lives in the hook (not in mutate() callbacks) so it
+ * still happens if the user navigates away while the assistant is replying.
  */
 export function useSendMessage() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: sendMessage,
-    onSuccess: (result, variables) => {
-      const key = queryKeys.conversation(result.conversationId);
+    onSuccess: (result) => {
+      const { conversation } = result;
       const added = [result.userMessage, result.assistantMessage];
 
-      if (variables.conversationId) {
-        // Existing conversation: append the exchange.
-        queryClient.setQueryData<ConversationResponse>(key, (old) =>
-          old ? { ...old, messages: [...old.messages, ...added] } : old,
-        );
-      } else {
-        // New conversation: show it instantly, then fetch the server's title in the background.
-        const now = result.assistantMessage.createdAt;
-        queryClient.setQueryData<ConversationResponse>(key, {
-          conversation: { id: result.conversationId, title: variables.message.slice(0, 60), createdAt: now, updatedAt: now },
-          messages: added,
-        });
-        void queryClient.invalidateQueries({ queryKey: key, exact: true });
-      }
+      // The open conversation: append the exchange (or create it, for a new chat).
+      queryClient.setQueryData<ConversationResponse>(queryKeys.conversation(conversation.id), (old) => ({
+        conversation,
+        messages: old ? [...old.messages, ...added] : added,
+      }));
 
-      // The sidebar order (and, for a new chat, its contents) changed.
-      void queryClient.invalidateQueries({ queryKey: queryKeys.conversations, exact: true });
+      // The sidebar: this conversation moves to the top with its new preview.
+      queryClient.setQueryData<ConversationSummary[]>(queryKeys.conversations, (old) =>
+        old ? [conversation, ...old.filter((item) => item.id !== conversation.id)] : old,
+      );
     },
   });
 }

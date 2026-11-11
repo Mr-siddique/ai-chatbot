@@ -44,26 +44,27 @@ function mockChatServer() {
       if (failure) return errorResponse(failure.status, failure.code, failure.message);
 
       const now = new Date().toISOString();
+      const reply = `Reply to: ${body.message}`;
       let id = body.conversationId;
       if (!id) {
         id = `new${nextId++}`;
-        conversations.unshift({ id, title: body.message.slice(0, 60), createdAt: now, updatedAt: now });
+        conversations.unshift({ id, title: body.message.slice(0, 60), lastMessagePreview: reply, createdAt: now, updatedAt: now });
         messages[id] = [];
       } else {
         const index = conversations.findIndex((c) => c.id === id);
         const [moved] = conversations.splice(index, 1);
-        conversations.unshift({ ...moved!, updatedAt: now });
+        conversations.unshift({ ...moved!, lastMessagePreview: reply, updatedAt: now });
       }
       const userMessage: Message = { id: `m${nextId++}`, conversationId: id, role: 'user', content: body.message, createdAt: now };
       const assistantMessage: Message = {
         id: `m${nextId++}`,
         conversationId: id,
         role: 'assistant',
-        content: `Reply to: ${body.message}`,
+        content: reply,
         createdAt: now,
       };
       messages[id]!.push(userMessage, assistantMessage);
-      return HttpResponse.json({ conversationId: id, userMessage, assistantMessage });
+      return HttpResponse.json({ conversationId: id, conversation: conversations[0], userMessage, assistantMessage });
     }),
   );
   return state;
@@ -84,6 +85,13 @@ const sidebarTitles = () =>
     .map((link) => link.querySelector('span')?.textContent)
     .filter(Boolean);
 const location = () => screen.getByTestId('location').textContent;
+/**
+ * Finds text inside the conversation only (the sidebar preview repeats the
+ * latest reply). Re-queries the thread on every attempt, because a new chat
+ * navigates to /c/:id and renders a fresh thread element.
+ */
+const findInThread = (text: string) =>
+  waitFor(() => within(screen.getByRole('log', { name: 'Messages' })).getByText(text));
 
 describe('Sending in a new chat (UI-02, UI-03, UI-04)', () => {
   it('UI-03: shows my message at once, then the reply; the chat moves to /c/:id', async () => {
@@ -98,7 +106,7 @@ describe('Sending in a new chat (UI-02, UI-03, UI-04)', () => {
     expect(messageBox()).toHaveValue('');
     expect(screen.getByRole('status')).toHaveTextContent('Assistant is typing…');
 
-    expect(await screen.findByText('Reply to: Where is my parcel?')).toBeInTheDocument();
+    expect(await findInThread('Reply to: Where is my parcel?')).toBeInTheDocument();
     expect(threadTexts()).toEqual(['You said:Where is my parcel?', 'Assistant said:Reply to: Where is my parcel?']);
     expect(location()).toBe('/c/new100');
     expect(api.sent).toEqual([{ message: 'Where is my parcel?' }]);
@@ -124,11 +132,11 @@ describe('Sending in an existing conversation', () => {
   it('UI-03: appends my message and the reply after the earlier ones', async () => {
     const api = mockChatServer();
     const { user } = await renderChat('/c/c1');
-    await screen.findByText('How do I get a refund?');
+    await findInThread('How do I get a refund?');
 
     await user.type(messageBox(), 'Thanks!{Enter}');
 
-    expect(await screen.findByText('Reply to: Thanks!')).toBeInTheDocument();
+    expect(await findInThread('Reply to: Thanks!')).toBeInTheDocument();
     expect(threadTexts()).toEqual([
       'You said:How do I get a refund?',
       'Assistant said:Here is how:\n1. Open the help page\n2. Choose "Refund"',
@@ -142,7 +150,7 @@ describe('Sending in an existing conversation', () => {
   it('UI-04: the conversation moves to the top of the sidebar', async () => {
     mockChatServer();
     const { user } = await renderChat('/c/c1');
-    await screen.findByText('How do I get a refund?');
+    await findInThread('How do I get a refund?');
     expect(sidebarTitles()).toEqual(['Delivery address change', 'Refund for order']);
 
     await user.type(messageBox(), 'One more thing{Enter}');
@@ -151,19 +159,58 @@ describe('Sending in an existing conversation', () => {
   });
 });
 
+describe('Sidebar summary after a send (CHAT-03)', () => {
+  const previewOf = (title: RegExp) =>
+    within(screen.getByRole('navigation', { name: 'Conversations' }))
+      .getByRole('link', { name: title })
+      .querySelectorAll('span')[2]?.textContent;
+
+  it('CHAT-03: the sidebar shows each conversation’s latest message', async () => {
+    mockChatServer();
+    await renderChat('/');
+
+    await waitFor(() => expect(previewOf(/Delivery address change/)).toBe('Yes, before it ships.'));
+  });
+
+  it('CHAT-03: after a send the preview becomes the new reply, and the title stays', async () => {
+    mockChatServer();
+    const { user } = await renderChat('/c/c1');
+    await findInThread('How do I get a refund?');
+
+    await user.type(messageBox(), 'Thanks!{Enter}');
+    await findInThread('Reply to: Thanks!');
+
+    expect(previewOf(/Refund for order/)).toBe('Reply to: Thanks!');
+  });
+
+  it('CHAT-01: updates the sidebar from the send response, without refetching history', async () => {
+    const api = mockChatServer();
+    const { user } = await renderChat('/c/c1');
+    await findInThread('How do I get a refund?');
+    const callsBefore = api.historyCalls;
+
+    await user.type(messageBox(), 'No refetch please{Enter}');
+    await findInThread('Reply to: No refetch please');
+    await delay(50);
+
+    expect(api.historyCalls).toBe(callsBefore);
+    expect(sidebarTitles()[0]).toBe('Refund for order');
+  });
+});
+
 describe('While a reply is pending (UI-02)', () => {
   it('UI-02: cannot send a second message until the reply arrives', async () => {
     const api = mockChatServer();
     api.replyDelayMs = 100;
     const { user } = await renderChat('/c/c1');
-    await screen.findByText('How do I get a refund?');
+    await findInThread('How do I get a refund?');
 
     await user.type(messageBox(), 'First{Enter}');
     await user.type(messageBox(), 'Second{Enter}');
 
     expect(screen.getByRole('button', { name: 'Sending…' })).toBeDisabled();
     expect(messageBox()).toHaveValue('Second'); // typing is kept for later
-    await screen.findByText('Reply to: First');
+    await findInThread('Reply to: First');
     expect(api.sent).toHaveLength(1);
     expect(screen.getByRole('button', { name: 'Send' })).toBeEnabled();
   });
@@ -174,7 +221,7 @@ describe('When sending fails (UI-03)', () => {
     const api = mockChatServer();
     api.failNext.push({ status: 502, code: 'AI_UNAVAILABLE', message: 'The assistant is unavailable right now. Please try again.' });
     const { user } = await renderChat('/c/c1');
-    await screen.findByText('How do I get a refund?');
+    await findInThread('How do I get a refund?');
 
     await user.type(messageBox(), 'Are you there?{Enter}');
 
@@ -184,7 +231,7 @@ describe('When sending fails (UI-03)', () => {
 
     await user.click(within(alert).getByRole('button', { name: 'Retry' }));
 
-    expect(await screen.findByText('Reply to: Are you there?')).toBeInTheDocument();
+    expect(await findInThread('Reply to: Are you there?')).toBeInTheDocument();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     // Exactly one copy of the message in the thread, and two attempts on the server.
     expect(threadTexts().filter((text) => text === 'You said:Are you there?')).toHaveLength(1);
@@ -198,7 +245,7 @@ describe('When sending fails (UI-03)', () => {
     const api = mockChatServer();
     api.failNext.push('network');
     const { user } = await renderChat('/c/c1');
-    await screen.findByText('How do I get a refund?');
+    await findInThread('How do I get a refund?');
 
     await user.type(messageBox(), 'Hello?{Enter}');
 
@@ -211,7 +258,7 @@ describe('When sending fails (UI-03)', () => {
     const api = mockChatServer();
     api.failNext.push({ status: 500, code: 'INTERNAL', message: 'Something went wrong' });
     const { user } = await renderChat('/c/c1');
-    await screen.findByText('How do I get a refund?');
+    await findInThread('How do I get a refund?');
 
     await user.type(messageBox(), 'Oops{Enter}');
     await user.click(await screen.findByRole('button', { name: 'Dismiss' }));
@@ -231,7 +278,7 @@ describe('When sending fails (UI-03)', () => {
 
     await user.click(screen.getByRole('button', { name: 'Retry' }));
 
-    expect(await screen.findByText('Reply to: First try')).toBeInTheDocument();
+    expect(await findInThread('Reply to: First try')).toBeInTheDocument();
     expect(location()).toMatch(/^\/c\/new/);
   });
 });
@@ -241,11 +288,11 @@ describe('Switching conversations mid-send', () => {
     const api = mockChatServer();
     api.replyDelayMs = 100;
     const { user } = await renderChat('/c/c1');
-    await screen.findByText('How do I get a refund?');
+    await findInThread('How do I get a refund?');
 
     await user.type(messageBox(), 'Slow question{Enter}');
     await user.click(screen.getByRole('link', { name: /Delivery address change/ }));
-    await screen.findByText('Can I change my address?');
+    await findInThread('Can I change my address?');
 
     // The pending message is not shown in the other conversation.
     expect(screen.queryByText('Slow question')).not.toBeInTheDocument();
@@ -255,6 +302,6 @@ describe('Switching conversations mid-send', () => {
 
     // Going back shows the completed exchange.
     await user.click(screen.getByRole('link', { name: /Refund for order/ }));
-    expect(await screen.findByText('Reply to: Slow question')).toBeInTheDocument();
+    expect(await findInThread('Reply to: Slow question')).toBeInTheDocument();
   });
 });

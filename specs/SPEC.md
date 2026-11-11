@@ -17,9 +17,9 @@ Source: challenge brief. **M** = must · **B** = bonus · **S** = our addition.
 ## Chat
 | ID | Requirement / acceptance criteria | Pri |
 |----|-----------------------------------|-----|
-| CHAT-01 | `POST /chat/send {message, conversationId?}` → `200 {conversationId, userMessage, assistantMessage}`. Empty or > 4000 chars → `400`. | M |
+| CHAT-01 | `POST /chat/send {message, conversationId?}` → `200 {conversationId, conversation, userMessage, assistantMessage}`, where `conversation` is the updated `ConversationSummary` (so the client needs no refetch). Empty or > 4000 chars → `400`. | M |
 | CHAT-02 | Both messages saved in MongoDB with the caller's `userId`; conversation `updatedAt` bumped. | M |
-| CHAT-03 | `GET /chat/history` → the caller's conversations, newest first (`[]` if none). | M |
+| CHAT-03 | `GET /chat/history` → the caller's conversations, most recent activity first (`[]` if none). Each has `title` (from the first message, never changes) and `lastMessagePreview` (the latest message, whitespace collapsed, ≤ 100 chars with `…`), so the sidebar shows where each chat left off. | M |
 | CHAT-04 | `GET /chat/history/:id` → `{conversation, messages}` oldest-first. Malformed id → `400`. | M |
 | CHAT-05 | Another user's conversation (read or send) → `404`; nothing written to it. | M |
 | CHAT-06 | Omitting `conversationId` starts a new conversation titled with the first 60 chars of the message. | S |
@@ -80,7 +80,7 @@ Cookie: `token=<JWT>`; `httpOnly`, `SameSite=Lax`, `Secure` in production, JWT p
 | POST | `/auth/login` | – | `{email, password}` → `200 {user}` |
 | POST | `/auth/logout` | – | → `204` |
 | GET | `/auth/me` | ✓ | → `200 {user}` |
-| POST | `/chat/send` | ✓ | `{message, conversationId?}` → `200 {conversationId, userMessage, assistantMessage}` |
+| POST | `/chat/send` | ✓ | `{message, conversationId?}` → `200 {conversationId, conversation, userMessage, assistantMessage}` |
 | GET | `/chat/history` | ✓ | → `200 {conversations: ConversationSummary[]}` |
 | GET | `/chat/history/:id` | ✓ | → `200 {conversation, messages: Message[]}` |
 | GET | `/health` | – | → `200 {status: "ok"}` |
@@ -88,12 +88,12 @@ Cookie: `token=<JWT>`; `httpOnly`, `SameSite=Lax`, `Secure` in production, JWT p
 ```ts
 type User = { id: string; name: string; email: string; createdAt: string }
 type Message = { id: string; conversationId: string; role: 'user' | 'assistant'; content: string; createdAt: string }
-type ConversationSummary = { id: string; title: string; updatedAt: string; createdAt: string }
+type ConversationSummary = { id: string; title: string; lastMessagePreview: string; updatedAt: string; createdAt: string }
 ```
 
 ## Data model (MongoDB)
 - **users** — `email` (unique, lowercase), `name`, `passwordHash` (`select: false`), timestamps.
-- **conversations** — `userId`, `title`, timestamps. Index `{ userId: 1, updatedAt: -1 }`.
+- **conversations** — `userId`, `title`, `lastMessagePreview` (set on every send), timestamps. Index `{ userId: 1, updatedAt: -1 }`.
 - **messages** — `conversationId`, `userId`, `role`, `content`, `createdAt`. Index `{ conversationId: 1, createdAt: 1 }`.
 
 Every chat query filters by `userId` from the token, never from the request body.

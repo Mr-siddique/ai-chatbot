@@ -53,7 +53,7 @@ describe('GET /chat/history', () => {
     const res = await agent.get('/chat/history');
 
     expect(res.body.conversations).toEqual([
-      { id, title: 'Where is my parcel?', createdAt: ISO, updatedAt: ISO },
+      { id, title: 'Where is my parcel?', lastMessagePreview: 'Echo: Where is my parcel?', createdAt: ISO, updatedAt: ISO },
     ]);
   });
 
@@ -99,7 +99,13 @@ describe('GET /chat/history/:conversationId', () => {
     const res = await agent.get(`/chat/history/${id}`);
 
     expect(res.status).toBe(200);
-    expect(res.body.conversation).toEqual({ id, title: 'Hello', createdAt: ISO, updatedAt: ISO });
+    expect(res.body.conversation).toEqual({
+      id,
+      title: 'Hello',
+      lastMessagePreview: 'Echo: Second question',
+      createdAt: ISO,
+      updatedAt: ISO,
+    });
     expect(res.body.messages.map((m: { role: string; content: string }) => [m.role, m.content])).toEqual([
       ['user', 'Hello'],
       ['assistant', 'Echo: Hello'],

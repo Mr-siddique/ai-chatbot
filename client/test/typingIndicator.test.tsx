@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import { delay, http, HttpResponse } from 'msw';
 import { TypingIndicator } from '../src/components/TypingIndicator.tsx';
 import type { SendBody } from '../src/api/types.ts';
@@ -36,11 +36,12 @@ describe('Typing indicator in the chat (BON-01)', () => {
         const now = new Date().toISOString();
         return HttpResponse.json({
           conversationId: 'n1',
+          conversation: { id: 'n1', title: message, lastMessagePreview: 'Done', createdAt: now, updatedAt: now },
           userMessage: { id: 'u', conversationId: 'n1', role: 'user', content: message, createdAt: now },
           assistantMessage: { id: 'a', conversationId: 'n1', role: 'assistant', content: 'Done', createdAt: now },
         });
       }),
-      http.get(apiUrl('/chat/history/n1'), () => HttpResponse.json({ conversation: { id: 'n1', title: 'Hi', createdAt: '', updatedAt: '' }, messages: [] })),
+      http.get(apiUrl('/chat/history/n1'), () => HttpResponse.json({ conversation: { id: 'n1', title: 'Hi', lastMessagePreview: '', createdAt: '', updatedAt: '' }, messages: [] })),
     );
   }
 
@@ -51,7 +52,7 @@ describe('Typing indicator in the chat (BON-01)', () => {
 
     expect(screen.getByText('Assistant is typing…')).toBeInTheDocument();
 
-    expect(await screen.findByText('Done')).toBeInTheDocument();
+    expect(await waitFor(() => within(screen.getByRole('log', { name: 'Messages' })).getByText('Done'))).toBeInTheDocument();
     expect(screen.queryByText('Assistant is typing…')).not.toBeInTheDocument();
   });
 

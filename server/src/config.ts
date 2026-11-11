@@ -29,6 +29,8 @@ const envSchema = z.object({
   NODE_ENV: z.enum(NODE_ENVS).default('development'),
   PORT: z.coerce.number().int().positive().default(4000),
   LOG_LEVEL: z.enum(LOG_LEVELS).optional(),
+  // Defaults to on in production. Off only for plain-http setups (local docker compose).
+  COOKIE_SECURE: z.enum(['true', 'false']).optional(),
   MONGODB_URI: required('MONGODB_URI'),
   JWT_SECRET: required('JWT_SECRET').min(32, 'JWT_SECRET must be at least 32 characters'),
   JWT_EXPIRES_IN: duration.prefault('7d'),
@@ -50,6 +52,8 @@ export type Config = {
   isProd: boolean;
   port: number;
   logLevel: LogLevel;
+  /** Auth cookie `Secure` flag (needs https, except on localhost in most browsers). */
+  cookieSecure: boolean;
   mongodbUri: string;
   jwt: { secret: string; expiresInSeconds: number };
   bcryptRounds: number;
@@ -84,6 +88,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     isProd: e.NODE_ENV === 'production',
     port: e.PORT,
     logLevel: e.LOG_LEVEL ?? DEFAULT_LOG_LEVEL[e.NODE_ENV],
+    cookieSecure: e.COOKIE_SECURE ? e.COOKIE_SECURE === 'true' : e.NODE_ENV === 'production',
     mongodbUri: e.MONGODB_URI,
     jwt: { secret: e.JWT_SECRET, expiresInSeconds: e.JWT_EXPIRES_IN },
     bcryptRounds: BCRYPT_ROUNDS[e.NODE_ENV],

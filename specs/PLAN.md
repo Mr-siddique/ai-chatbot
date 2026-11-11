@@ -57,14 +57,18 @@ client/src/
 2. Validate `{message (trimmed, 1–4000), conversationId?}`.
 3. If `conversationId` is given, find it by `{ _id, userId }` (else 404). Load its last `AI_CONTEXT_MESSAGES` messages.
 4. `ai.reply(history, message)`. On `AiError` → 502 `AI_UNAVAILABLE`, **nothing has been written yet**.
-5. Only now save: the new conversation (if any), then both messages via `insertMany`, then bump `updatedAt`.
-   If saving the messages fails, a conversation created in this request is deleted.
+5. Only now save: the new conversation (if any), then both messages via `insertMany`, then set `updatedAt` and
+   `lastMessagePreview` (the reply) and return the updated summary. If saving the messages fails, a conversation
+   created in this request is deleted.
+6. Client: `useSendMessage` puts the returned `conversation` at the top of the cached sidebar list and appends the
+   messages to the cached conversation — no refetch of `/chat/history`.
 
 ## Configuration
 | Var | Default | Notes |
 |-----|---------|-------|
 | `NODE_ENV` | `development` | `production` → secure cookie, JSON logs, no error details, `trust proxy` |
 | `PORT` | `4000` | |
+| `COOKIE_SECURE` | on in production | optional; `false` for plain-http docker compose |
 | `LOG_LEVEL` | `debug` dev · `info` prod · `silent` test | optional override |
 | `MONGODB_URI` | — (required) | |
 | `JWT_SECRET` | — (required, ≥ 32 chars) | |

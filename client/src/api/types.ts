@@ -13,7 +13,15 @@ export type Message = {
   createdAt: string;
 };
 
-export type ConversationSummary = { id: string; title: string; createdAt: string; updatedAt: string };
+export type ConversationSummary = {
+  id: string;
+  /** From the first message; never changes. */
+  title: string;
+  /** The latest message (≤ 100 chars), shown under the title. */
+  lastMessagePreview: string;
+  createdAt: string;
+  updatedAt: string;
+};
 
 export type ErrorCode =
   | 'VALIDATION_ERROR'
@@ -35,6 +43,12 @@ export type LoginBody = { email: string; password: string };
 export type UserResponse = { user: User };
 
 export type SendBody = { message: string; conversationId?: string };
-export type SendResponse = { conversationId: string; userMessage: Message; assistantMessage: Message };
+export type SendResponse = {
+  conversationId: string;
+  /** The updated summary: lets the client update the sidebar without a refetch. */
+  conversation: ConversationSummary;
+  userMessage: Message;
+  assistantMessage: Message;
+};
 export type HistoryResponse = { conversations: ConversationSummary[] };
 export type ConversationResponse = { conversation: ConversationSummary; messages: Message[] };

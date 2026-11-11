@@ -10,7 +10,11 @@ type ConversationListProps = {
   onRetry(): void;
 };
 
-/** UI-04: past conversations, newest activity first. The open one is highlighted. */
+/**
+ * UI-04: past conversations, most recent activity first. Each shows its
+ * title, the latest message (CHAT-03) and when it was active. The open one
+ * is highlighted.
+ */
 export function ConversationList({ conversations, isLoading, error, onRetry }: ConversationListProps) {
   if (isLoading) {
     return (
@@ -42,9 +46,14 @@ export function ConversationList({ conversations, isLoading, error, onRetry }: C
           {/* NavLink sets aria-current="page" on the open conversation. */}
           <NavLink to={`/c/${conversation.id}`} className={styles.item}>
             <span className={styles.title}>{conversation.title}</span>
-            <time className={styles.time} dateTime={conversation.updatedAt}>
-              {formatRelativeTime(conversation.updatedAt)}
-            </time>
+            <span className={styles.meta}>
+              {conversation.lastMessagePreview && (
+                <span className={styles.preview}>{conversation.lastMessagePreview}</span>
+              )}
+              <time className={styles.time} dateTime={conversation.updatedAt}>
+                {formatRelativeTime(conversation.updatedAt)}
+              </time>
+            </span>
           </NavLink>
         </li>
       ))}

@@ -39,6 +39,12 @@ Work top to bottom, one task at a time. Tick a box only when its tests pass. IDs
 
 ## Log
 Newest first. One line per session: what was done, anything half-finished or blocked, gotchas.
+- 2026-11-13 — Sidebar shows the latest message: `lastMessagePreview` on conversations (set on every send, ≤100
+  chars), and POST /chat/send returns the updated `conversation` so the client updates its cache with no
+  /chat/history refetch. SPEC CHAT-01/03 + data model updated. Dev DB backfilled once. Also: `COOKIE_SECURE`
+  override (for plain-http docker compose) and index.ts now exits clearly on EADDRINUSE (Express 5 passes listen
+  errors to the callback; a tsx-watch restart race left a silent dead server → Vite 502). Server 194 / client 100
+  tests green. Still in 6.1.
 - 2026-11-12 — 5.3 done: pino-http request logs (method/path/status/ms, X-Request-Id, warn 4xx / error 5xx,
   /health skipped, no headers or bodies), logger redaction (cookie/auth/password/passwordHash/apiKey), optional
   LOG_LEVEL, environments.test.ts pins the per-NODE_ENV table, client .env.development/.env.production, README

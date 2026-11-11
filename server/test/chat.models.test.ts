@@ -31,11 +31,12 @@ describe('Conversation model', () => {
     ).rejects.toThrow(/title/);
   });
 
-  it('CHAT-03: serializes to { id, title, createdAt, updatedAt } without userId', async () => {
+  it('CHAT-03: serializes to { id, title, lastMessagePreview, createdAt, updatedAt } without userId', async () => {
     const conversation = await Conversation.create({ userId: new Types.ObjectId(), title: 'Hello' });
     const expected = {
       id: conversation._id.toString(),
       title: 'Hello',
+      lastMessagePreview: '',
       createdAt: expect.stringMatching(ISO),
       updatedAt: expect.stringMatching(ISO),
     };

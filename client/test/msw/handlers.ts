@@ -26,8 +26,20 @@ export const session = {
 /** Sample chat data shaped exactly like the API's responses. */
 export const fixtures = {
   conversations: [
-    { id: 'c2', title: 'Delivery address change', createdAt: '2026-01-02T10:00:00.000Z', updatedAt: '2026-01-02T10:05:00.000Z' },
-    { id: 'c1', title: 'Refund for order', createdAt: '2026-01-01T09:00:00.000Z', updatedAt: '2026-01-01T09:02:00.000Z' },
+    {
+      id: 'c2',
+      title: 'Delivery address change',
+      lastMessagePreview: 'Yes, before it ships.',
+      createdAt: '2026-01-02T10:00:00.000Z',
+      updatedAt: '2026-01-02T10:05:00.000Z',
+    },
+    {
+      id: 'c1',
+      title: 'Refund for order',
+      lastMessagePreview: 'Here is how: 1. Open the help page 2. Choose "Refund"',
+      createdAt: '2026-01-01T09:00:00.000Z',
+      updatedAt: '2026-01-01T09:02:00.000Z',
+    },
   ] satisfies ConversationSummary[],
   messages: {
     c1: [

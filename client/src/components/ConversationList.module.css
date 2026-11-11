@@ -29,14 +29,32 @@
 
 .title {
   font-size: 0.9rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Latest message and time on one line; the preview shrinks, the time doesn't. */
+.meta {
+  display: flex;
+  gap: var(--space-2);
+  min-width: 0;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.preview {
+  flex: 1;
+  min-width: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .time {
+  flex-shrink: 0;
   font-size: 0.75rem;
-  color: var(--color-text-muted);
 }
 
 .note {
