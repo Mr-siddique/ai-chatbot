@@ -4,6 +4,7 @@ import { AppError } from '../lib/AppError.js';
 import { User, type UserDocument } from '../models/User.js';
 
 export type SignupInput = { name: string; email: string; password: string };
+export type LoginInput = { email: string; password: string };
 
 function isDuplicateKeyError(err: unknown): boolean {
   return typeof err === 'object' && err !== null && 'code' in err && err.code === 11000;
@@ -24,4 +25,32 @@ export async function signup(input: SignupInput, config: Pick<Config, 'bcryptRou
     }
     throw err;
   }
+}
+
+/** One generic error for every failed login (AUTH-02). */
+const invalidCredentials = () => new AppError(401, 'INVALID_CREDENTIALS', 'Invalid email or password');
+
+/** A real bcrypt hash per cost factor, compared against when the email is unknown. */
+const dummyHashes = new Map<number, Promise<string>>();
+function dummyHash(rounds: number): Promise<string> {
+  let hash = dummyHashes.get(rounds);
+  if (!hash) {
+    hash = bcrypt.hash('not-a-real-password', rounds);
+    dummyHashes.set(rounds, hash);
+  }
+  return hash;
+}
+
+/**
+ * AUTH-02: check credentials. Unknown email and wrong password fail the same
+ * way and both run a bcrypt comparison, so neither the response nor its
+ * timing reveals whether an email is registered.
+ */
+export async function login(input: LoginInput, config: Pick<Config, 'bcryptRounds'>): Promise<UserDocument> {
+  const user = await User.findOne({ email: input.email }).select('+passwordHash');
+  const hash = user?.passwordHash ?? (await dummyHash(config.bcryptRounds));
+  const matches = await bcrypt.compare(input.password, hash);
+
+  if (!user || !matches) throw invalidCredentials();
+  return user;
 }

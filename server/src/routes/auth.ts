@@ -23,6 +23,12 @@ const signupSchema = z.object({
     ),
 });
 
+const loginSchema = z.object({
+  email,
+  // No strength rules on login: just non-empty and bounded.
+  password: z.string().min(1, 'Password is required').max(1024, 'Password is too long'),
+});
+
 export function createAuthRouter({ config }: { config: Config }): Router {
   const router = Router();
 
@@ -33,6 +39,15 @@ export function createAuthRouter({ config }: { config: Config }): Router {
 
     setAuthCookie(res, signToken(user.id, config), config);
     res.status(201).json({ user: toPublicUser(user) });
+  });
+
+  // AUTH-02: log in and start a session.
+  router.post('/login', async (req, res) => {
+    const input = loginSchema.parse(req.body);
+    const user = await authService.login(input, config);
+
+    setAuthCookie(res, signToken(user.id, config), config);
+    res.status(200).json({ user: toPublicUser(user) });
   });
 
   return router;

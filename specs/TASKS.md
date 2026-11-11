@@ -10,7 +10,7 @@ Work top to bottom, one task at a time. Tick a box only when its tests pass. IDs
 - [x] **2.1** `AppError` + `errorHandler` (contract error shape)
 - [x] **2.2** `User` model, `jwt.ts`, cookie options helper — AUTH-04
 - [x] **2.3** `POST /auth/signup` — AUTH-01, AUTH-04
-- [ ] **2.4** `POST /auth/login` — AUTH-02
+- [x] **2.4** `POST /auth/login` — AUTH-02
 - [ ] **2.5** `requireAuth` + `GET /auth/me` + `POST /auth/logout` — AUTH-03, AUTH-05, AUTH-06
 
 ## 3. AI + Chat (server)
@@ -39,6 +39,8 @@ Work top to bottom, one task at a time. Tick a box only when its tests pass. IDs
 
 ## Log
 Newest first. One line per session: what was done, anything half-finished or blocked, gotchas.
+- 2026-11-11 — 2.4 done: POST /auth/login, 72 tests green. Unknown email compares against a dummy bcrypt
+  hash so timing matches a wrong password (measured 57 vs 58 ms on local Mongo). Next: 2.5.
 - 2026-11-11 — 2.3 done: POST /auth/signup (routes/auth.ts + services/auth.ts), 60 tests green, smoke-tested on
   local Mongo. Password capped at 72 bytes (bcrypt limit) — SPEC AUTH-01 updated. Duplicates decided by the
   unique index (race-safe), not a pre-check. Next: 2.4.
