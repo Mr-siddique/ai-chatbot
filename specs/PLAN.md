@@ -6,12 +6,16 @@
 | Client | React 18 + Vite + TypeScript, React Router, Axios, plain CSS |
 | Server | Node 22, Express, TypeScript, mongoose, bcrypt, jsonwebtoken, cookie-parser, zod, helmet |
 | DB | MongoDB 7 in Docker locally, MongoDB Atlas (free tier) in prod |
-| AI | OpenRouter, called with native `fetch` (no SDK) |
+| AI | OpenRouter via the official `@openrouter/sdk` |
 | Tests | Vitest; supertest + mongodb-memory-server (server); Testing Library + MSW (client) |
 | Hosting | Vercel (client) · Render (server) · Atlas (DB) |
 
 ## Key decisions
 - **OpenRouter** over Hugging Face: free models, chat format with system prompts, model is just an env var.
+- **`@openrouter/sdk`** (user's choice over plain fetch). Configured with `retryConfig: { strategy: 'none' }`: the SDK
+  default retries 5xx with backoff for up to an hour, and `timeoutMs` is per attempt, so one call bounded by
+  `AI_TIMEOUT_MS` keeps chat requests predictable. Tests swap the network via `HTTPClient({ fetcher })`. The SDK
+  validates responses strictly; anything unexpected becomes an `AiError`.
 - **JWT in an httpOnly cookie**, not localStorage, so XSS can't steal it. The client always calls
   `/api/*` on its own origin, and a proxy strips `/api` and forwards to the server:
   Vite proxy (dev) · nginx (Docker) · Vercel rewrite (prod). This keeps the cookie first-party everywhere.

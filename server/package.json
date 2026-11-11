@@ -14,9 +14,11 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "smoke:ai": "tsx scripts/smoke-ai.ts"
   },
   "dependencies": {
+    "@openrouter/sdk": "^1.5.85",
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
@@ -50,6 +52,7 @@
   "allowScripts": {
     "bcrypt@6.0.0": true,
     "esbuild@0.28.2": true,
-    "mongodb-memory-server@11.3.0": true
+    "mongodb-memory-server@11.3.0": true,
+    "@openrouter/sdk": false
   }
 }

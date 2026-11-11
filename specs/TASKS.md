@@ -14,7 +14,7 @@ Work top to bottom, one task at a time. Tick a box only when its tests pass. IDs
 - [x] **2.5** `requireAuth` + `GET /auth/me` + `POST /auth/logout` — AUTH-03, AUTH-05, AUTH-06
 
 ## 3. AI + Chat (server)
-- [ ] **3.1** `AiService` interface + OpenRouter impl + system prompt + timeout/error handling (fake `fetch` in tests) — AI-01..04
+- [x] **3.1** `AiService` interface + OpenRouter impl + system prompt + timeout/error handling (fake `fetch` in tests) — AI-01..04
 - [ ] **3.2** `Conversation` + `Message` models
 - [ ] **3.3** `POST /chat/send` (new + existing conversation, rollback on AI failure) — CHAT-01, 02, 06, AI-04
 - [ ] **3.4** `GET /chat/history` + `GET /chat/history/:id` — CHAT-03, 04
@@ -39,6 +39,13 @@ Work top to bottom, one task at a time. Tick a box only when its tests pass. IDs
 
 ## Log
 Newest first. One line per session: what was done, anything half-finished or blocked, gotchas.
+- 2026-11-11 — 3.1 revised: switched services/ai.ts to @openrouter/sdk (same AiService interface), 108 tests
+  green, live smoke OK. Gotchas: SDK default retries 5xx for up to 1h → disabled; title header is now
+  X-OpenRouter-Title; no `reasoning.exclude` option; postinstall script denied (only checks model-type staleness).
+- 2026-11-11 — 3.1 done: services/ai.ts (AiService, OpenRouter client, system prompt, context window, AiError
+  for HTTP/200-with-error/empty/invalid JSON/network/timeout), 107 tests green. Added `npm run smoke:ai` (1 real
+  request; not in tests). Live replies take 13–15 s. Prompt tuned: plain text, no invented account data, may use
+  facts from the chat but not claim they're "on file". Next: 3.2.
 - 2026-11-11 — 2.5 done: requireAuth (cookie only) + GET /auth/me + POST /auth/logout; 87 tests green.
   Full signup → me → logout → login flow verified through the Vite /api proxy. Auth section complete. Next: 3.1.
 - 2026-11-11 — 2.4 done: POST /auth/login, 72 tests green. Unknown email compares against a dummy bcrypt
