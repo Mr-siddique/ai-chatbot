@@ -46,6 +46,34 @@ describe.each(Object.entries(expected))('NODE_ENV=%s (BON-03)', (nodeEnv, want) 
   });
 });
 
+describe('TRUST_PROXY override', () => {
+  it('defaults to 1 hop in production, off elsewhere', () => {
+    expect(testConfig({ NODE_ENV: 'production' }).trustProxy).toBe(1);
+    expect(testConfig({ NODE_ENV: 'development' }).trustProxy).toBe(false);
+  });
+
+  it('accepts a hop count, true or false', () => {
+    expect(testConfig({ NODE_ENV: 'production', TRUST_PROXY: '3' }).trustProxy).toBe(3);
+    expect(testConfig({ TRUST_PROXY: 'true' }).trustProxy).toBe(true);
+    expect(testConfig({ NODE_ENV: 'production', TRUST_PROXY: 'false' }).trustProxy).toBe(false);
+    expect(() => testConfig({ TRUST_PROXY: 'loopback' })).toThrow(/TRUST_PROXY/);
+  });
+
+  it('decides which X-Forwarded-For entry becomes req.ip', async () => {
+    const express = (await import('express')).default;
+    const request = (await import('supertest')).default;
+    const ipWith = async (hops: number) => {
+      const app = express();
+      app.set('trust proxy', testConfig({ NODE_ENV: 'production', TRUST_PROXY: String(hops) }).trustProxy);
+      app.get('/', (req, res) => res.send(req.ip));
+      return (await request(app).get('/').set('X-Forwarded-For', '203.0.113.7, 10.0.0.2')).text;
+    };
+
+    expect(await ipWith(1)).toBe('10.0.0.2'); // only the last proxy trusted
+    expect(await ipWith(2)).toBe('203.0.113.7'); // the real client behind two proxies
+  });
+});
+
 describe('COOKIE_SECURE override', () => {
   it('defaults to on in production only', () => {
     expect(testConfig({ NODE_ENV: 'production' }).cookieSecure).toBe(true);

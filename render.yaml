@@ -1,0 +1,71 @@
+# Render Blueprint: deploys the API (web service) and the React app (static site).
+# Secrets marked `sync: false` are entered in the Render dashboard, never committed.
+# Docs: https://render.com/docs/blueprint-spec
+
+services:
+  # ---------- API: Express server ----------
+  - type: web
+    name: ai-chatbot-api
+    runtime: node
+    plan: free
+    region: singapore # closest Render region to the Atlas cluster (AWS Mumbai)
+    rootDir: server
+    # Render builds with NODE_ENV=production, which would skip devDependencies
+    # (TypeScript). Install them for the build, then drop them.
+    buildCommand: npm ci --include=dev && npm run build && npm prune --omit=dev
+    startCommand: node dist/index.js
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "22"
+      # Test-only dependency; skip its 100 MB MongoDB download during the build.
+      - key: MONGOMS_DISABLE_POSTINSTALL
+        value: "1"
+      - key: MONGODB_URI
+        sync: false # Atlas connection string
+      - key: JWT_SECRET
+        generateValue: true # Render generates a random secret
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: OPENROUTER_MODEL
+        value: nvidia/nemotron-3.5-lightning:free
+      - key: AI_TIMEOUT_MS
+        value: "30000"
+      # The public site URL (CORS allow-list + OpenRouter attribution).
+      - key: CLIENT_ORIGIN
+        value: https://ai-chatbot-web.onrender.com
+
+  # ---------- Web: React app (static) ----------
+  - type: web
+    name: ai-chatbot-web
+    runtime: static
+    rootDir: client
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+    routes:
+      # Same-origin API: /api/auth/login → API /auth/login, so the httpOnly
+      # auth cookie stays first-party (see specs/PLAN.md).
+      - type: rewrite
+        source: /api/*
+        destination: https://ai-chatbot-api.onrender.com/*
+      # Single-page app: every other path serves index.html.
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin

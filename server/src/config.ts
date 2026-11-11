@@ -31,6 +31,11 @@ const envSchema = z.object({
   LOG_LEVEL: z.enum(LOG_LEVELS).optional(),
   // Defaults to on in production. Off only for plain-http setups (local docker compose).
   COOKIE_SECURE: z.enum(['true', 'false']).optional(),
+  // How many proxies sit in front of the server (for the real client IP). Default: 1 in production.
+  TRUST_PROXY: z
+    .string()
+    .regex(/^(\d+|true|false)$/, 'must be a number of proxy hops, true or false')
+    .optional(),
   MONGODB_URI: required('MONGODB_URI'),
   JWT_SECRET: required('JWT_SECRET').min(32, 'JWT_SECRET must be at least 32 characters'),
   JWT_EXPIRES_IN: duration.prefault('7d'),
@@ -54,6 +59,8 @@ export type Config = {
   logLevel: LogLevel;
   /** Auth cookie `Secure` flag (needs https, except on localhost in most browsers). */
   cookieSecure: boolean;
+  /** Express 'trust proxy': hops in front of us, or false. Drives req.ip (rate limiting). */
+  trustProxy: number | boolean;
   mongodbUri: string;
   jwt: { secret: string; expiresInSeconds: number };
   bcryptRounds: number;
@@ -62,6 +69,13 @@ export type Config = {
   /** BON-02. Off in tests unless a test turns it on. */
   rateLimit: { enabled: boolean; windowMs: number; max: number; authMax: number };
 };
+
+function parseTrustProxy(value: string | undefined, nodeEnv: NodeEnv): number | boolean {
+  if (value === undefined) return nodeEnv === 'production' ? 1 : false;
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  return Number.parseInt(value, 10);
+}
 
 export class ConfigError extends Error {
   constructor(public readonly problems: string[]) {
@@ -89,6 +103,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     port: e.PORT,
     logLevel: e.LOG_LEVEL ?? DEFAULT_LOG_LEVEL[e.NODE_ENV],
     cookieSecure: e.COOKIE_SECURE ? e.COOKIE_SECURE === 'true' : e.NODE_ENV === 'production',
+    trustProxy: parseTrustProxy(e.TRUST_PROXY, e.NODE_ENV),
     mongodbUri: e.MONGODB_URI,
     jwt: { secret: e.JWT_SECRET, expiresInSeconds: e.JWT_EXPIRES_IN },
     bcryptRounds: BCRYPT_ROUNDS[e.NODE_ENV],

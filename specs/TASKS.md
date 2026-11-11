@@ -39,6 +39,10 @@ Work top to bottom, one task at a time. Tick a box only when its tests pass. IDs
 
 ## Log
 Newest first. One line per session: what was done, anything half-finished or blocked, gotchas.
+- 2026-11-13 — Atlas configured (M0, AWS Mumbai, least-privilege user, connection string in
+  ~/.ai-chatbot-secrets/atlas.env, verified read/write + other DBs blocked). render.yaml added (API in Singapore +
+  static site with /api rewrite); builds simulated as Render runs them and the pruned prod build ran against Atlas.
+  TRUST_PROXY added (hop count; check real hops after deploy). To verify live: /api rewrite with a slow AI reply.
 - 2026-11-13 — AI-05 added: OpenRouter daily free quota (429 mentioning free-models-per-day) → 503
   AI_QUOTA_EXCEEDED with details.resetAt (from X-RateLimit-Reset). Chat box shows "Today’s free AI quota has been
   used up. You can chat again <after time | tomorrow>.", Send locked until reset, unsent message has Dismiss only.

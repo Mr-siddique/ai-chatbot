@@ -23,10 +23,8 @@ export type AppDeps = {
 export function createApp({ config, logger = createLogger(config), ai = createOpenRouterAi(config.ai) }: AppDeps): Express {
   const app = express();
 
-  if (config.isProd) {
-    // Behind Render / nginx / Vercel: needed for Secure cookies and real client IPs.
-    app.set('trust proxy', 1);
-  }
+  // Behind Render / nginx: needed for real client IPs (rate limiting) and https detection.
+  if (config.trustProxy !== false) app.set('trust proxy', config.trustProxy);
 
   app.disable('x-powered-by');
   app.use(createRequestLogger(logger));
