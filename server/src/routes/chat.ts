@@ -18,6 +18,8 @@ const sendSchema = z.object({
   conversationId: objectId.optional(),
 });
 
+const historyParamsSchema = z.object({ conversationId: objectId });
+
 export function createChatRouter({ config, chat }: { config: Config; chat: ChatService }): Router {
   const router = Router();
 
@@ -28,6 +30,19 @@ export function createChatRouter({ config, chat }: { config: Config; chat: ChatS
   router.post('/send', async (req, res) => {
     const input = sendSchema.parse(req.body);
     const result = await chat.send(authUser(req).id, input);
+    res.json(result);
+  });
+
+  // CHAT-03: the sidebar list.
+  router.get('/history', async (req, res) => {
+    const conversations = await chat.listConversations(authUser(req).id);
+    res.json({ conversations });
+  });
+
+  // CHAT-04: open one conversation.
+  router.get('/history/:conversationId', async (req, res) => {
+    const { conversationId } = historyParamsSchema.parse(req.params);
+    const result = await chat.getConversation(authUser(req).id, conversationId);
     res.json(result);
   });
 

@@ -2,12 +2,13 @@ import { Types } from 'mongoose';
 import type { Logger } from 'pino';
 import type { Config } from '../config.js';
 import { AppError } from '../lib/AppError.js';
-import { Conversation, TITLE_MAX_LENGTH } from '../models/Conversation.js';
-import { Message, toPublicMessage, type PublicMessage } from '../models/Message.js';
+import { Conversation, TITLE_MAX_LENGTH, toPublicConversation, type PublicConversation } from '../models/Conversation.js';
+import { CHRONOLOGICAL, Message, toPublicMessage, type PublicMessage } from '../models/Message.js';
 import { AiError, type AiService, type ChatTurn } from './ai.js';
 
 export type SendInput = { message: string; conversationId?: string | undefined };
 export type SendResult = { conversationId: string; userMessage: PublicMessage; assistantMessage: PublicMessage };
+export type ConversationWithMessages = { conversation: PublicConversation; messages: PublicMessage[] };
 
 /** CHAT-06: first 60 characters of the first message, whitespace collapsed. */
 export function titleFromMessage(message: string): string {
@@ -36,6 +37,24 @@ export function createChatService({ ai, config, logger }: ChatServiceDeps) {
   }
 
   return {
+    /** CHAT-03: the user's conversations, most recently active first. */
+    async listConversations(userIdString: string): Promise<PublicConversation[]> {
+      const conversations = await Conversation.find({ userId: new Types.ObjectId(userIdString) })
+        .sort({ updatedAt: -1, _id: -1 })
+        .lean();
+      return conversations.map(toPublicConversation);
+    },
+
+    /** CHAT-04 / CHAT-05: one conversation with its messages, oldest first. Someone else's → 404. */
+    async getConversation(userIdString: string, conversationId: string): Promise<ConversationWithMessages> {
+      const userId = new Types.ObjectId(userIdString);
+      const conversation = await Conversation.findOne({ _id: conversationId, userId }).lean();
+      if (!conversation) throw AppError.notFound('Conversation not found');
+
+      const messages = await Message.find({ conversationId: conversation._id, userId }).sort(CHRONOLOGICAL).lean();
+      return { conversation: toPublicConversation(conversation), messages: messages.map(toPublicMessage) };
+    },
+
     /**
      * CHAT-01/02/06, AI-04. Nothing is written until the AI has replied, so
      * a failed reply leaves no trace: no new conversation, no messages.

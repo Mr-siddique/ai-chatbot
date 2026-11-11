@@ -17,7 +17,7 @@ Work top to bottom, one task at a time. Tick a box only when its tests pass. IDs
 - [x] **3.1** `AiService` interface + OpenRouter impl + system prompt + timeout/error handling (fake `fetch` in tests) — AI-01..04
 - [x] **3.2** `Conversation` + `Message` models
 - [x] **3.3** `POST /chat/send` (new + existing conversation, rollback on AI failure) — CHAT-01, 02, 06, AI-04
-- [ ] **3.4** `GET /chat/history` + `GET /chat/history/:id` — CHAT-03, 04
+- [x] **3.4** `GET /chat/history` + `GET /chat/history/:id` — CHAT-03, 04
 - [ ] **3.5** Two-user isolation tests — CHAT-05
 
 ## 4. Client
@@ -39,6 +39,9 @@ Work top to bottom, one task at a time. Tick a box only when its tests pass. IDs
 
 ## Log
 Newest first. One line per session: what was done, anything half-finished or blocked, gotchas.
+- 2026-11-12 — 3.4 done: GET /chat/history (newest activity first) + GET /chat/history/:id (messages oldest
+  first, 400 bad id, 404 foreign/missing — identical bodies); 153 tests green. Most CHAT-05 cases already
+  covered in send/history suites. Next: 3.5.
 - 2026-11-11 — Moved scripts/smoke-ai.ts into test/live/openrouter.live.test.ts (`npm run test:live`,
   excluded from `npm test`). Live run caught a bug: a timeout during body download surfaced as a raw
   TimeoutError, not "timed out" — fixed + unit test. Live latency seen: 12–22 s, one >30 s (timed out).
