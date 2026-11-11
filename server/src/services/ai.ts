@@ -16,15 +16,39 @@ export interface AiService {
   reply(history: ChatTurn[], message: string): Promise<AiReply>;
 }
 
-/** Any failure to get a usable reply. The chat service maps it to 502 AI_UNAVAILABLE. */
+/**
+ * Any failure to get a usable reply. `kind` tells the chat service how to
+ * answer: 'daily_quota' → 503 AI_QUOTA_EXCEEDED (AI-05), else 502 AI_UNAVAILABLE.
+ */
 export class AiError extends Error {
   constructor(
     message: string,
     public readonly status?: number,
+    public readonly kind: 'unavailable' | 'daily_quota' = 'unavailable',
+    /** For 'daily_quota': when the quota resets (ISO time), if the provider said. */
+    public readonly resetAt?: string,
   ) {
     super(message);
     this.name = 'AiError';
   }
+}
+
+/**
+ * AI-05: OpenRouter's daily cap on free-model requests answers 429 with a
+ * message naming the `free-models-per-day` limit. Other 429s (an upstream
+ * provider briefly busy) are retryable and stay 'unavailable'.
+ */
+export function isDailyQuotaError(status: number, text: string): boolean {
+  return status === 429 && /free-models-per-day|per[- ]day|daily/i.test(text);
+}
+
+/** X-RateLimit-Reset is epoch milliseconds (seconds tolerated). Only sane future times within 2 days. */
+export function parseResetHeader(value: string | null, now = Date.now()): string | undefined {
+  const raw = Number(value);
+  if (!value || !Number.isFinite(raw) || raw <= 0) return undefined;
+  const ms = raw < 1e12 ? raw * 1000 : raw;
+  if (ms <= now || ms - now > 2 * 24 * 60 * 60 * 1000) return undefined;
+  return new Date(ms).toISOString();
 }
 
 export const APP_TITLE = 'AI Support Agent';
@@ -107,6 +131,14 @@ export function createOpenRouterAi(config: Config['ai'], fetcher?: Fetcher): AiS
       return new AiError(`OpenRouter returned an unexpected response (${where})`, err.statusCode);
     }
     if (err instanceof OpenRouterError) {
+      if (isDailyQuotaError(err.statusCode, `${err.message} ${err.body}`)) {
+        return new AiError(
+          `OpenRouter daily free quota used up (${where}): ${redact(err.message)}`,
+          err.statusCode,
+          'daily_quota',
+          parseResetHeader(err.headers.get('x-ratelimit-reset')),
+        );
+      }
       return new AiError(`OpenRouter error ${err.statusCode} (${where}): ${redact(err.message)}`, err.statusCode);
     }
     if (err instanceof HTTPClientError) {

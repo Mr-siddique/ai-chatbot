@@ -82,3 +82,15 @@
   text-decoration: underline;
   cursor: pointer;
 }
+
+/* AI-05: shown above the message box while the AI quota is used up. */
+.quotaNotice {
+  max-width: 800px;
+  margin: 0 auto var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: calc(var(--radius) - 4px);
+  background: #fff7e6;
+  border: 1px solid #f5c26b;
+  color: #7a4b00;
+  font-size: 0.9rem;
+}

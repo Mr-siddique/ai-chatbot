@@ -7,6 +7,7 @@ export type ErrorCode =
   | 'EMAIL_TAKEN'
   | 'RATE_LIMITED'
   | 'AI_UNAVAILABLE'
+  | 'AI_QUOTA_EXCEEDED'
   | 'INTERNAL';
 
 /**

@@ -18,3 +18,16 @@ export function formatRelativeTime(iso: string, now: Date = new Date()): string 
   if (diff < 2 * DAY) return 'yesterday';
   return (date.getFullYear() === now.getFullYear() ? sameYear : otherYear).format(date);
 }
+
+const clock = new Intl.DateTimeFormat('en', { hour: 'numeric', minute: '2-digit' });
+
+/**
+ * AI-05: when the AI quota comes back, phrased for the chat box:
+ * "after 5:30 AM", "tomorrow after 5:30 AM", or just "tomorrow" if unknown.
+ */
+export function formatQuotaReset(resetAt: string | undefined, now: Date = new Date()): string {
+  const reset = resetAt ? new Date(resetAt) : null;
+  if (!reset || Number.isNaN(reset.getTime()) || reset <= now) return 'tomorrow';
+  const sameDay = reset.toDateString() === now.toDateString();
+  return `${sameDay ? '' : 'tomorrow '}after ${clock.format(reset)}`;
+}

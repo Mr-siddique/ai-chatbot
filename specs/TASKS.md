@@ -39,6 +39,11 @@ Work top to bottom, one task at a time. Tick a box only when its tests pass. IDs
 
 ## Log
 Newest first. One line per session: what was done, anything half-finished or blocked, gotchas.
+- 2026-11-13 — AI-05 added: OpenRouter daily free quota (429 mentioning free-models-per-day) → 503
+  AI_QUOTA_EXCEEDED with details.resetAt (from X-RateLimit-Reset). Chat box shows "Today’s free AI quota has been
+  used up. You can chat again <after time | tomorrow>.", Send locked until reset, unsent message has Dismiss only.
+  Other 429s stay AI_UNAVAILABLE + Retry. Detection matches OpenRouter's message text — not live-verified (would
+  burn the quota); the server logs kind + raw message on every AI failure. Server 203 / client 111 tests green.
 - 2026-11-13 — Sidebar shows the latest message: `lastMessagePreview` on conversations (set on every send, ≤100
   chars), and POST /chat/send returns the updated `conversation` so the client updates its cache with no
   /chat/history refetch. SPEC CHAT-01/03 + data model updated. Dev DB backfilled once. Also: `COOKIE_SECURE`

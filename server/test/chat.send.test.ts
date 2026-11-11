@@ -6,6 +6,7 @@ import { createApp } from '../src/app.js';
 import { Conversation } from '../src/models/Conversation.js';
 import { CHRONOLOGICAL, Message } from '../src/models/Message.js';
 import { User } from '../src/models/User.js';
+import { AiError } from '../src/services/ai.js';
 import { previewFromMessage, titleFromMessage } from '../src/services/chat.js';
 import { signedUpAgent } from './helpers/auth.js';
 import { testConfig } from './helpers/config.js';
@@ -282,6 +283,33 @@ describe('POST /chat/send — AI failures', () => {
 
     expect(res.body.assistantMessage.content).toBe('Echo: Hello?');
     expect(await Conversation.countDocuments()).toBe(1);
+  });
+
+  it('AI-05: the provider’s daily quota is a 503 AI_QUOTA_EXCEEDED with the reset time; nothing saved', async () => {
+    const { agent } = await signedUpAgent(app);
+    const resetAt = new Date(Date.now() + 3600_000).toISOString();
+    fake.failWith(new AiError('OpenRouter daily free quota used up', 429, 'daily_quota', resetAt));
+
+    const res = await agent.post('/chat/send').send({ message: 'Hello?' });
+
+    expect(res.status).toBe(503);
+    expect(res.body.error).toEqual({
+      code: 'AI_QUOTA_EXCEEDED',
+      message: 'Today’s free AI quota has been used up. Please try again tomorrow.',
+      details: { resetAt },
+    });
+    expect(await Conversation.countDocuments()).toBe(0);
+    expect(await Message.countDocuments()).toBe(0);
+  });
+
+  it('AI-05: without a known reset time the error has no details', async () => {
+    const { agent } = await signedUpAgent(app);
+    fake.failWith(new AiError('OpenRouter daily free quota used up', 429, 'daily_quota'));
+
+    const res = await agent.post('/chat/send').send({ message: 'Hello?' });
+
+    expect(res.status).toBe(503);
+    expect(res.body.error).not.toHaveProperty('details');
   });
 
   it('a non-AI bug is a 500, not a 502', async () => {

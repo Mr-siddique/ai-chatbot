@@ -95,7 +95,16 @@ export function createChatService({ ai, config, logger }: ChatServiceDeps) {
         reply = await ai.reply(history, input.message);
       } catch (err) {
         if (err instanceof AiError) {
-          logger.warn({ err: { message: err.message, status: err.status }, userId: userIdString }, 'AI reply failed');
+          logger.warn({ err: { message: err.message, status: err.status, kind: err.kind }, userId: userIdString }, 'AI reply failed');
+          if (err.kind === 'daily_quota') {
+            // AI-05: retrying won't help until the provider's quota resets.
+            throw new AppError(
+              503,
+              'AI_QUOTA_EXCEEDED',
+              'Today’s free AI quota has been used up. Please try again tomorrow.',
+              err.resetAt ? { resetAt: err.resetAt } : undefined,
+            );
+          }
           throw new AppError(502, 'AI_UNAVAILABLE', 'The assistant is unavailable right now. Please try again.');
         }
         throw err;

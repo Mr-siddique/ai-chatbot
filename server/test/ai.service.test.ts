@@ -6,6 +6,7 @@ import {
   SYSTEM_PROMPT,
   buildMessages,
   createOpenRouterAi,
+  parseResetHeader,
   type ChatTurn,
 } from '../src/services/ai.js';
 import { testConfig } from './helpers/config.js';
@@ -165,6 +166,54 @@ describe('createOpenRouterAi', () => {
       new RegExp(`OpenRouter error ${status} \\(model test/model:free\\)`),
     );
     expect(err.status).toBe(status);
+  });
+
+  it('AI-05: the daily free-model limit becomes a daily_quota AiError with the reset time', async () => {
+    const resetMs = Date.now() + 3 * 60 * 60 * 1000;
+    const { fetcher } = fakeFetcher(
+      () =>
+        new Response(
+          JSON.stringify({
+            error: { message: 'Rate limit exceeded: free-models-per-day. Add 10 credits to unlock 1000 free model requests per day', code: 429 },
+          }),
+          { status: 429, headers: { 'Content-Type': 'application/json', 'X-RateLimit-Reset': String(resetMs) } },
+        ),
+    );
+
+    const err = await expectAiError(createOpenRouterAi(aiConfig, fetcher).reply([], 'hi'), /daily free quota/);
+
+    expect(err.kind).toBe('daily_quota');
+    expect(err.resetAt).toBe(new Date(resetMs).toISOString());
+  });
+
+  it('AI-05: an upstream provider being briefly busy (429) stays retryable', async () => {
+    const { fetcher } = fakeFetcher(() =>
+      json(429, {
+        error: {
+          message: 'Provider returned error',
+          code: 429,
+          metadata: { raw: 'google/gemma is temporarily rate-limited upstream. Please retry shortly' },
+        },
+      }),
+    );
+
+    const err = await expectAiError(createOpenRouterAi(aiConfig, fetcher).reply([], 'hi'), /429/);
+    expect(err.kind).toBe('unavailable');
+  });
+
+  it.each([
+    [null, undefined],
+    ['nonsense', undefined],
+    [String(Date.now() - 1000), undefined], // in the past
+    [String(Date.now() + 10 * 24 * 3600 * 1000), undefined], // absurdly far
+  ])('parseResetHeader(%s) → %s', (value, expected) => {
+    expect(parseResetHeader(value)).toBe(expected);
+  });
+
+  it('parseResetHeader accepts epoch seconds as well as milliseconds', () => {
+    const now = Date.parse('2026-01-01T00:00:00.000Z');
+    expect(parseResetHeader(String(now / 1000 + 3600), now)).toBe('2026-01-01T01:00:00.000Z');
+    expect(parseResetHeader(String(now + 3600_000), now)).toBe('2026-01-01T01:00:00.000Z');
   });
 
   it('AI-04: an error body with HTTP 200 becomes an AiError', async () => {

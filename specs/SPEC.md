@@ -30,6 +30,7 @@ Source: challenge brief. **M** = must · **B** = bonus · **S** = our addition.
 | AI-01 | Replies from OpenRouter `chat/completions`, model from `OPENROUTER_MODEL`. Key stays server-side. | M |
 | AI-02 | A system prompt makes it a polite, concise support agent that won't invent orders/accounts/policies. | S |
 | AI-03 | Last `AI_CONTEXT_MESSAGES` messages of the conversation are sent as context. | S |
+| AI-05 | When the AI provider's daily free quota is used up (OpenRouter 429 `free-models-per-day`), `/chat/send` → `503 AI_QUOTA_EXCEEDED` with `details.resetAt` (ISO time) when known; nothing saved. The chat box shows "Today's free AI quota has been used up. You can chat again after <time>.", Send stays disabled until then, and the unsent message offers Dismiss (no Retry). Other provider 429s stay `AI_UNAVAILABLE`. | S |
 | AI-04 | Provider error/timeout/empty reply → `502 AI_UNAVAILABLE`, **nothing saved** (a just-created conversation is removed). Tests never hit the real API. | S |
 
 ## Client
@@ -70,7 +71,7 @@ The server mounts routes at the root as the brief specifies. The client calls th
 
 Errors: `{ "error": { "code": "...", "message": "..." } }` — codes: `VALIDATION_ERROR` 400,
 `UNAUTHENTICATED` 401, `INVALID_CREDENTIALS` 401, `NOT_FOUND` 404, `EMAIL_TAKEN` 409,
-`RATE_LIMITED` 429, `AI_UNAVAILABLE` 502, `INTERNAL` 500.
+`RATE_LIMITED` 429, `AI_UNAVAILABLE` 502, `AI_QUOTA_EXCEEDED` 503, `INTERNAL` 500.
 
 Cookie: `token=<JWT>`; `httpOnly`, `SameSite=Lax`, `Secure` in production, JWT payload `{ sub: userId }`.
 

@@ -10,17 +10,19 @@ type MessageInputProps = {
   onSubmit(message: string): void;
   /** True while a message is being sent. */
   disabled?: boolean;
+  /** Sending isn't possible right now (e.g. AI quota used up); typing still is. */
+  locked?: boolean;
 };
 
 /**
  * UI-02: the message box. Enter sends, Shift+Enter adds a line. Controlled by
  * the parent so the text survives a failed send (UI-03).
  */
-export function MessageInput({ value, onChange, onSubmit, disabled = false }: MessageInputProps) {
+export function MessageInput({ value, onChange, onSubmit, disabled = false, locked = false }: MessageInputProps) {
   const inputId = useId();
   const counterId = useId();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const canSend = !disabled && value.trim().length > 0;
+  const canSend = !disabled && !locked && value.trim().length > 0;
 
   function submit() {
     if (!canSend) return;

@@ -8,6 +8,7 @@ import { ConversationList } from '../components/ConversationList.tsx';
 import { MessageInput } from '../components/MessageInput.tsx';
 import { MessageList } from '../components/MessageList.tsx';
 import { TypingIndicator } from '../components/TypingIndicator.tsx';
+import { formatQuotaReset } from '../lib/relativeTime.ts';
 import styles from './ChatPage.module.css';
 
 /** A message the user sent that the server hasn't confirmed yet. */
@@ -17,7 +18,15 @@ type Outgoing = {
   conversationId: string | undefined;
   status: 'sending' | 'failed';
   error?: string;
+  /** False when retrying can't help (AI-05: quota used up). */
+  retryable?: boolean;
 };
+
+/** AI-05: the AI provider's daily quota is used up until `resetAt` (if known). */
+type QuotaBlock = { resetAt: string | undefined };
+
+/** The longest we keep Send disabled on our own; a reload clears it anyway. */
+const MAX_QUOTA_BLOCK_MS = 2 * 24 * 60 * 60 * 1000;
 
 /**
  * The signed-in chat screen: "/" is a new chat, "/c/:conversationId" an
@@ -32,6 +41,15 @@ export default function ChatPage() {
   const send = useSendMessage();
   const [draft, setDraft] = useState('');
   const [outgoing, setOutgoing] = useState<Outgoing | null>(null);
+  const [quota, setQuota] = useState<QuotaBlock | null>(null);
+
+  // AI-05: re-enable sending when the quota resets.
+  useEffect(() => {
+    if (!quota?.resetAt) return;
+    const wait = Date.parse(quota.resetAt) - Date.now();
+    const timer = setTimeout(() => setQuota(null), Math.min(Math.max(wait, 0), MAX_QUOTA_BLOCK_MS));
+    return () => clearTimeout(timer);
+  }, [quota]);
 
   // Which conversation is on screen right now (read inside async callbacks).
   const currentConversationId = useRef(conversationId);
@@ -52,7 +70,14 @@ export default function ChatPage() {
           }
         },
         onError: (err) => {
-          setOutgoing({ text, conversationId: targetId, status: 'failed', error: toApiError(err).message });
+          const apiError = toApiError(err);
+          if (apiError.code === 'AI_QUOTA_EXCEEDED') {
+            const details = apiError.details as { resetAt?: unknown } | undefined;
+            setQuota({ resetAt: typeof details?.resetAt === 'string' ? details.resetAt : undefined });
+            setOutgoing({ text, conversationId: targetId, status: 'failed', retryable: false });
+            return;
+          }
+          setOutgoing({ text, conversationId: targetId, status: 'failed', error: apiError.message });
         },
       },
     );
@@ -89,7 +114,12 @@ export default function ChatPage() {
       </section>
 
       <div className={styles.composer}>
-        <MessageInput value={draft} onChange={setDraft} onSubmit={onSubmit} disabled={sending} />
+        {quota && (
+          <p className={styles.quotaNotice} role="alert">
+            Today’s free AI quota has been used up. You can chat again {formatQuotaReset(quota.resetAt)}.
+          </p>
+        )}
+        <MessageInput value={draft} onChange={setDraft} onSubmit={onSubmit} disabled={sending} locked={Boolean(quota)} />
       </div>
     </ChatLayout>
   );
@@ -163,16 +193,23 @@ function outgoingAsMessage(outgoing: Outgoing): Message {
   };
 }
 
-/** Below the unconfirmed message: the typing indicator, or the error with Retry/Dismiss. */
+/**
+ * Below the unconfirmed message: the typing indicator, or the error with
+ * Retry/Dismiss. When retrying can't help (quota), only Dismiss is offered and
+ * the reason is shown once, in the chat box notice.
+ */
 function OutgoingStatus({ outgoing, onRetry, onDismiss }: { outgoing: Outgoing; onRetry(): void; onDismiss(): void }) {
   if (outgoing.status === 'sending') return <TypingIndicator />;
+  const retryable = outgoing.retryable !== false;
   return (
-    <div className={styles.failed} role="alert">
-      <p className={styles.failedText}>Not sent. {outgoing.error}</p>
+    <div className={styles.failed} role={retryable ? 'alert' : undefined}>
+      <p className={styles.failedText}>{retryable ? `Not sent. ${outgoing.error ?? ''}` : 'Not sent.'}</p>
       <div className={styles.failedActions}>
-        <button type="button" className={styles.retry} onClick={onRetry}>
-          Retry
-        </button>
+        {retryable && (
+          <button type="button" className={styles.retry} onClick={onRetry}>
+            Retry
+          </button>
+        )}
         <button type="button" className={styles.dismiss} onClick={onDismiss}>
           Dismiss
         </button>
