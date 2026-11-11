@@ -208,4 +208,20 @@ describe('createOpenRouterAi', () => {
     await expectAiError(createOpenRouterAi(aiConfig, hanging).reply([], 'hi'), /timed out after 50ms/);
     expect(Date.now() - started).toBeLessThan(1000);
   });
+
+  it('AI-04: also reports a timeout that hits while the body is still downloading', async () => {
+    // Headers arrive at once, but the body stream never finishes before the abort.
+    const slowBody = vi.fn<Fetcher>(async (input, init) => {
+      const signal = input instanceof Request ? input.signal : init?.signal;
+      const body = new ReadableStream({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode('{"id":"gen-1",'));
+          signal?.addEventListener('abort', () => controller.error(signal.reason));
+        },
+      });
+      return new Response(body, { status: 200, headers: { 'Content-Type': 'application/json' } });
+    });
+
+    await expectAiError(createOpenRouterAi(aiConfig, slowBody).reply([], 'hi'), /timed out after 50ms/);
+  });
 });

@@ -27,8 +27,7 @@
   was removed and the Gemma free models were rate-limited). It's a reasoning model: read only
   `message.content`, ignore `message.reasoning`, and don't set a low `max_tokens` (one reply used about 400
   tokens). Free tier allows 50 requests/day, so tests always use a fake AI.
-- **No DB transactions**: messages are saved only after the AI succeeds, so a failure just deletes a
-  conversation created in that request.
+- **No DB transactions**: nothing is written until the AI has replied, so an AI failure needs no cleanup.
 
 ## Layout
 ```
@@ -50,10 +49,11 @@ client/src/
 
 ## Send-message flow
 1. `requireAuth` reads the cookie → `req.user`.
-2. Find the conversation by `{ _id, userId }` (else 404), or create one if no id was sent.
-3. Load the last N messages → `ai.reply(history, message)`.
-4. On success, save the user and assistant messages and bump `updatedAt`. On failure, delete the new
-   conversation and return 502.
+2. Validate `{message (trimmed, 1–4000), conversationId?}`.
+3. If `conversationId` is given, find it by `{ _id, userId }` (else 404). Load its last `AI_CONTEXT_MESSAGES` messages.
+4. `ai.reply(history, message)`. On `AiError` → 502 `AI_UNAVAILABLE`, **nothing has been written yet**.
+5. Only now save: the new conversation (if any), then both messages via `insertMany`, then bump `updatedAt`.
+   If saving the messages fails, a conversation created in this request is deleted.
 
 ## Configuration
 | Var | Default | Notes |

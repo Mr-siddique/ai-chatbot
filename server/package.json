@@ -15,7 +15,7 @@
     "test:watch": "vitest",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "smoke:ai": "tsx scripts/smoke-ai.ts"
+    "test:live": "vitest run --config vitest.live.config.ts"
   },
   "dependencies": {
     "@openrouter/sdk": "^1.5.85",

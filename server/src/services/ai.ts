@@ -95,7 +95,12 @@ export function createOpenRouterAi(config: Config['ai'], fetcher?: Fetcher): AiS
   const where = `model ${config.model}`;
 
   function toAiError(err: unknown): AiError {
-    if (err instanceof RequestTimeoutError) {
+    // The SDK wraps a timeout before the response starts (RequestTimeoutError);
+    // a timeout while the body is still downloading surfaces as the platform's
+    // own TimeoutError/AbortError.
+    const isPlatformTimeout =
+      err instanceof Error && (err.name === 'TimeoutError' || err.name === 'AbortError');
+    if (err instanceof RequestTimeoutError || isPlatformTimeout) {
       return new AiError(`OpenRouter timed out after ${config.timeoutMs}ms (${where})`);
     }
     if (err instanceof ResponseValidationError) {

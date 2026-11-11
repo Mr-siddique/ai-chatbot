@@ -16,7 +16,7 @@ Work top to bottom, one task at a time. Tick a box only when its tests pass. IDs
 ## 3. AI + Chat (server)
 - [x] **3.1** `AiService` interface + OpenRouter impl + system prompt + timeout/error handling (fake `fetch` in tests) — AI-01..04
 - [x] **3.2** `Conversation` + `Message` models
-- [ ] **3.3** `POST /chat/send` (new + existing conversation, rollback on AI failure) — CHAT-01, 02, 06, AI-04
+- [x] **3.3** `POST /chat/send` (new + existing conversation, rollback on AI failure) — CHAT-01, 02, 06, AI-04
 - [ ] **3.4** `GET /chat/history` + `GET /chat/history/:id` — CHAT-03, 04
 - [ ] **3.5** Two-user isolation tests — CHAT-05
 
@@ -39,6 +39,12 @@ Work top to bottom, one task at a time. Tick a box only when its tests pass. IDs
 
 ## Log
 Newest first. One line per session: what was done, anything half-finished or blocked, gotchas.
+- 2026-11-11 — Moved scripts/smoke-ai.ts into test/live/openrouter.live.test.ts (`npm run test:live`,
+  excluded from `npm test`). Live run caught a bug: a timeout during body download surfaced as a raw
+  TimeoutError, not "timed out" — fixed + unit test. Live latency seen: 12–22 s, one >30 s (timed out).
+- 2026-11-11 — 3.3 done: POST /chat/send (services/chat.ts + routes/chat.ts, AiService injected via createApp),
+  142 tests green, live E2E via proxy OK (~12 s/reply, context remembered). Writes happen only after the AI
+  replies. Prompt follow-up: model still describes UI it can't know ("Edit address" in a dashboard). Next: 3.4.
 - 2026-11-11 — 3.2 done: Conversation + Message models with list/read indexes and public serializers (no
   userId); 119 tests green. Always sort messages with `CHRONOLOGICAL` ({createdAt, _id}) — user msg and AI reply
   share a timestamp. Optional later: AI_CONTEXT_MAX_CHARS budget in buildMessages (discussed, deferred). Next: 3.3.

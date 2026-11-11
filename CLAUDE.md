@@ -20,7 +20,8 @@ If code and spec disagree, update the spec first, then the code. Don't build wha
   `errorHandler` format it. Read env only in `config.ts`.
 - Every chat query filters by `userId` from `req.user`. Another user's data → 404.
 - JWT lives only in an httpOnly cookie. The client never touches it, and nothing goes in localStorage.
-- Tests never call OpenRouter (inject a fake `AiService` or `fetch`).
+- Tests never call OpenRouter (inject a fake `AiService` or SDK `fetcher`). The only exception is
+  `server/test/live/`, run on demand with `npm run test:live` (uses free-tier quota).
 - Never log passwords, tokens or API keys. Every new env var goes into the matching `.env.example`
   and the config table in PLAN.md.
 - Run `npm test`, `npm run lint` and `npm run typecheck` in the package you changed before saying you're done.
