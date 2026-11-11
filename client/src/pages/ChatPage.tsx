@@ -1,22 +1,70 @@
-import { useState } from 'react';
-import { Link, useParams } from 'react-router';
-import { useConversation, useConversations } from '../api/chatQueries.ts';
-import { ApiError } from '../api/client.ts';
+import { useEffect, useRef, useState } from 'react';
+import { Link, useNavigate, useParams } from 'react-router';
+import { useConversation, useConversations, useSendMessage } from '../api/chatQueries.ts';
+import { ApiError, toApiError } from '../api/client.ts';
+import type { Message } from '../api/types.ts';
 import { ChatLayout } from '../components/ChatLayout.tsx';
 import { ConversationList } from '../components/ConversationList.tsx';
 import { MessageInput } from '../components/MessageInput.tsx';
 import { MessageList } from '../components/MessageList.tsx';
 import styles from './ChatPage.module.css';
 
+/** A message the user sent that the server hasn't confirmed yet. */
+type Outgoing = {
+  text: string;
+  /** Where it was sent: an existing conversation, or undefined for a new chat. */
+  conversationId: string | undefined;
+  status: 'sending' | 'failed';
+  error?: string;
+};
+
 /**
  * The signed-in chat screen: "/" is a new chat, "/c/:conversationId" an
- * existing one (UI-04). Sending arrives in TASKS.md 4.5.
+ * existing one (UI-04). Sending shows the message at once (UI-03) and
+ * keeps it with a Retry button if the reply fails.
  */
 export default function ChatPage() {
   const { conversationId } = useParams();
+  const navigate = useNavigate();
   const conversations = useConversations();
   const conversation = useConversation(conversationId);
+  const send = useSendMessage();
   const [draft, setDraft] = useState('');
+  const [outgoing, setOutgoing] = useState<Outgoing | null>(null);
+
+  // Which conversation is on screen right now (read inside async callbacks).
+  const currentConversationId = useRef(conversationId);
+  useEffect(() => {
+    currentConversationId.current = conversationId;
+  }, [conversationId]);
+
+  function deliver(text: string, targetId: string | undefined) {
+    setOutgoing({ text, conversationId: targetId, status: 'sending' });
+    send.mutate(
+      { message: text, ...(targetId ? { conversationId: targetId } : {}) },
+      {
+        onSuccess: (result) => {
+          setOutgoing(null);
+          // UI-04: a new chat gets its own URL, unless the user has moved on.
+          if (!targetId && currentConversationId.current === undefined) {
+            void navigate(`/c/${result.conversationId}`);
+          }
+        },
+        onError: (err) => {
+          setOutgoing({ text, conversationId: targetId, status: 'failed', error: toApiError(err).message });
+        },
+      },
+    );
+  }
+
+  function onSubmit(text: string) {
+    setDraft('');
+    deliver(text, conversationId);
+  }
+
+  // Only show the pending/failed message in the conversation it belongs to.
+  const visibleOutgoing = outgoing && outgoing.conversationId === conversationId ? outgoing : null;
+  const sending = send.isPending;
 
   return (
     <ChatLayout
@@ -30,24 +78,36 @@ export default function ChatPage() {
       }
     >
       <section className={styles.thread} aria-label="Conversation">
-        <Thread conversationId={conversationId} query={conversation} />
+        <Thread
+          conversationId={conversationId}
+          query={conversation}
+          outgoing={visibleOutgoing}
+          onRetry={() => visibleOutgoing && deliver(visibleOutgoing.text, visibleOutgoing.conversationId)}
+          onDismiss={() => setOutgoing(null)}
+        />
       </section>
 
       <div className={styles.composer}>
-        <MessageInput value={draft} onChange={setDraft} onSubmit={() => undefined} />
+        <MessageInput value={draft} onChange={setDraft} onSubmit={onSubmit} disabled={sending} />
       </div>
     </ChatLayout>
   );
 }
 
-function Thread({
-  conversationId,
-  query,
-}: {
+type ThreadProps = {
   conversationId: string | undefined;
   query: ReturnType<typeof useConversation>;
-}) {
+  outgoing: Outgoing | null;
+  onRetry(): void;
+  onDismiss(): void;
+};
+
+function Thread({ conversationId, query, outgoing, onRetry, onDismiss }: ThreadProps) {
+  const pendingMessages = outgoing ? [outgoingAsMessage(outgoing)] : [];
+  const footer = outgoing && <OutgoingStatus outgoing={outgoing} onRetry={onRetry} onDismiss={onDismiss} />;
+
   if (!conversationId) {
+    if (outgoing) return <MessageList messages={pendingMessages} footer={footer} />;
     return (
       <div className={styles.empty}>
         <h1 className={styles.emptyTitle}>How can we help you today?</h1>
@@ -86,7 +146,42 @@ function Thread({
   return (
     <>
       <h1 className="visually-hidden">{query.data.conversation.title}</h1>
-      <MessageList messages={query.data.messages} />
+      <MessageList messages={[...query.data.messages, ...pendingMessages]} footer={footer} />
     </>
+  );
+}
+
+/** Shows an unconfirmed message in the thread like any other user message. */
+function outgoingAsMessage(outgoing: Outgoing): Message {
+  return {
+    id: 'outgoing',
+    conversationId: outgoing.conversationId ?? '',
+    role: 'user',
+    content: outgoing.text,
+    createdAt: '',
+  };
+}
+
+/** Below the unconfirmed message: "replying…", or the error with Retry/Dismiss. */
+function OutgoingStatus({ outgoing, onRetry, onDismiss }: { outgoing: Outgoing; onRetry(): void; onDismiss(): void }) {
+  if (outgoing.status === 'sending') {
+    return (
+      <p className={styles.replying} role="status">
+        Assistant is replying…
+      </p>
+    );
+  }
+  return (
+    <div className={styles.failed} role="alert">
+      <p className={styles.failedText}>Not sent. {outgoing.error}</p>
+      <div className={styles.failedActions}>
+        <button type="button" className={styles.retry} onClick={onRetry}>
+          Retry
+        </button>
+        <button type="button" className={styles.dismiss} onClick={onDismiss}>
+          Dismiss
+        </button>
+      </div>
+    </div>
   );
 }

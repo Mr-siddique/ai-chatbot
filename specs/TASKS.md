@@ -25,7 +25,7 @@ Work top to bottom, one task at a time. Tick a box only when its tests pass. IDs
 - [x] **4.2** Login + Signup pages — UI-01
 - [x] **4.3** Chat layout: header with logout, sidebar, thread, input; responsive CSS — UI-07, UI-08
 - [x] **4.4** Conversation list + `/c/:id` loading — UI-04
-- [ ] **4.5** Send flow: optimistic message, error + retry, new-chat navigation — UI-02, UI-03
+- [x] **4.5** Send flow: optimistic message, error + retry, new-chat navigation — UI-02, UI-03
 
 ## 5. Bonus
 - [ ] **5.1** Typing indicator — BON-01
@@ -39,6 +39,10 @@ Work top to bottom, one task at a time. Tick a box only when its tests pass. IDs
 
 ## Log
 Newest first. One line per session: what was done, anything half-finished or blocked, gotchas.
+- 2026-11-12 — 4.5 done: send flow (optimistic message, "Assistant is replying…", failed → "Not sent" +
+  Retry/Dismiss, new chat → /c/:id, sidebar refetch, one send at a time). useSendMessage does cache updates in
+  the hook (mutate() callbacks don't run after unmount). 90 client tests, stable over 5 runs. Client (section 4)
+  complete — core app works end to end. Next: 5.1.
 - 2026-11-12 — 4.4 done: useConversations/useConversation (TanStack), ConversationList (NavLink highlight,
   relative time, loading/empty/error+Retry), MessageList (role=log, pre-wrap, scroll to newest), ChatPage reads
   /c/:id with not-found (400/404) and retry states. MSW fixtures + default empty history. 80 client tests green.
