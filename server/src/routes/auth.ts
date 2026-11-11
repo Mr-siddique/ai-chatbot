@@ -1,8 +1,9 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import type { Config } from '../config.js';
-import { setAuthCookie } from '../lib/authCookie.js';
+import { clearAuthCookie, setAuthCookie } from '../lib/authCookie.js';
 import { signToken } from '../lib/jwt.js';
+import { authUser, requireAuth } from '../middleware/requireAuth.js';
 import { toPublicUser } from '../models/User.js';
 import * as authService from '../services/auth.js';
 
@@ -48,6 +49,17 @@ export function createAuthRouter({ config }: { config: Config }): Router {
 
     setAuthCookie(res, signToken(user.id, config), config);
     res.status(200).json({ user: toPublicUser(user) });
+  });
+
+  // AUTH-03: end the session. Idempotent: works with or without a cookie.
+  router.post('/logout', (_req, res) => {
+    clearAuthCookie(res, config);
+    res.sendStatus(204);
+  });
+
+  // AUTH-06: who is logged in (lets the client restore a session on reload).
+  router.get('/me', requireAuth(config), (req, res) => {
+    res.json({ user: authUser(req) });
   });
 
   return router;

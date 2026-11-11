@@ -15,6 +15,9 @@
 - **JWT in an httpOnly cookie**, not localStorage, so XSS can't steal it. The client always calls
   `/api/*` on its own origin, and a proxy strips `/api` and forwards to the server:
   Vite proxy (dev) · nginx (Docker) · Vercel rewrite (prod). This keeps the cookie first-party everywhere.
+- **Stateless logout**: logout clears the cookie but doesn't revoke the JWT, so a copied token stays valid until
+  it expires (`JWT_EXPIRES_IN`). A server-side deny-list isn't worth it for this app. `requireAuth` reads only the
+  cookie (no `Authorization` header) and rejects tokens for deleted users.
 - **TypeScript + Vitest** on both sides: one test runner, types catch contract drift.
 - **Default model `nvidia/nemotron-3.5-lightning:free`** (checked 2026-11-11; the Llama 3.3 free tier
   was removed and the Gemma free models were rate-limited). It's a reasoning model: read only
