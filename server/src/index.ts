@@ -34,7 +34,7 @@ try {
 }
 logger.info('Connected to MongoDB');
 
-const server = createApp({ config }).listen(config.port, () => {
+const server = createApp({ config, logger }).listen(config.port, () => {
   logger.info(`Server listening on http://localhost:${config.port} (${config.nodeEnv})`);
 });
 
