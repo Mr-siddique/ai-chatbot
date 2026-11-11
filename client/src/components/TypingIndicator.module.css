@@ -1,0 +1,54 @@
+.row {
+  max-width: 800px;
+  margin: var(--space-3) auto 0;
+  display: flex;
+}
+
+/* Matches the assistant message bubble. */
+.bubble {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: var(--space-3) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  border-bottom-left-radius: 4px;
+  background: var(--color-surface);
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-text-muted);
+  animation: bounce 1.2s infinite ease-in-out;
+}
+
+.dot:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.dot:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes bounce {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  30% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+
+/* BON-01: no motion for people who ask for less; the dots stay visible. */
+@media (prefers-reduced-motion: reduce) {
+  .dot {
+    animation: none;
+    opacity: 0.7;
+  }
+}

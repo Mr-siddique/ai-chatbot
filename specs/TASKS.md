@@ -28,7 +28,7 @@ Work top to bottom, one task at a time. Tick a box only when its tests pass. IDs
 - [x] **4.5** Send flow: optimistic message, error + retry, new-chat navigation — UI-02, UI-03
 
 ## 5. Bonus
-- [ ] **5.1** Typing indicator — BON-01
+- [x] **5.1** Typing indicator — BON-01
 - [ ] **5.2** Rate limiting + client 429 message — BON-02
 - [ ] **5.3** Env-based config + fail-fast validation — BON-03
 
@@ -39,6 +39,9 @@ Work top to bottom, one task at a time. Tick a box only when its tests pass. IDs
 
 ## Log
 Newest first. One line per session: what was done, anything half-finished or blocked, gotchas.
+- 2026-11-12 — 5.1 done: TypingIndicator (assistant-style bubble, 3 bouncing dots aria-hidden, role=status
+  "Assistant is typing…", no animation under prefers-reduced-motion) replaces the plain status. 94 client tests
+  green. Next: 5.2.
 - 2026-11-12 — 4.5 done: send flow (optimistic message, "Assistant is replying…", failed → "Not sent" +
   Retry/Dismiss, new chat → /c/:id, sidebar refetch, one send at a time). useSendMessage does cache updates in
   the hook (mutate() callbacks don't run after unmount). 90 client tests, stable over 5 runs. Client (section 4)

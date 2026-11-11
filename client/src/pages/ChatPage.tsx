@@ -7,6 +7,7 @@ import { ChatLayout } from '../components/ChatLayout.tsx';
 import { ConversationList } from '../components/ConversationList.tsx';
 import { MessageInput } from '../components/MessageInput.tsx';
 import { MessageList } from '../components/MessageList.tsx';
+import { TypingIndicator } from '../components/TypingIndicator.tsx';
 import styles from './ChatPage.module.css';
 
 /** A message the user sent that the server hasn't confirmed yet. */
@@ -162,15 +163,9 @@ function outgoingAsMessage(outgoing: Outgoing): Message {
   };
 }
 
-/** Below the unconfirmed message: "replying…", or the error with Retry/Dismiss. */
+/** Below the unconfirmed message: the typing indicator, or the error with Retry/Dismiss. */
 function OutgoingStatus({ outgoing, onRetry, onDismiss }: { outgoing: Outgoing; onRetry(): void; onDismiss(): void }) {
-  if (outgoing.status === 'sending') {
-    return (
-      <p className={styles.replying} role="status">
-        Assistant is replying…
-      </p>
-    );
-  }
+  if (outgoing.status === 'sending') return <TypingIndicator />;
   return (
     <div className={styles.failed} role="alert">
       <p className={styles.failedText}>Not sent. {outgoing.error}</p>

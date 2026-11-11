@@ -96,7 +96,7 @@ describe('Sending in a new chat (UI-02, UI-03, UI-04)', () => {
     // Optimistic: visible before the server answers, input cleared, status shown.
     expect(threadTexts()).toEqual(['You said:Where is my parcel?']);
     expect(messageBox()).toHaveValue('');
-    expect(screen.getByRole('status')).toHaveTextContent('Assistant is replying…');
+    expect(screen.getByRole('status')).toHaveTextContent('Assistant is typing…');
 
     expect(await screen.findByText('Reply to: Where is my parcel?')).toBeInTheDocument();
     expect(threadTexts()).toEqual(['You said:Where is my parcel?', 'Assistant said:Reply to: Where is my parcel?']);
