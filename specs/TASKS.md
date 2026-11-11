@@ -4,7 +4,7 @@ Work top to bottom, one task at a time. Tick a box only when its tests pass. IDs
 
 ## 1. Scaffold
 - [x] **1.1** Server: package.json, tsconfig (strict, ESM), vitest, `config.ts`, `app.ts`, `index.ts`, `db.ts`, `GET /health`, test helper (in-memory Mongo)
-- [ ] **1.2** Client: Vite React-TS, vitest + Testing Library + MSW, `/api` dev proxy
+- [x] **1.2** Client: Vite React-TS, vitest + Testing Library + MSW, `/api` dev proxy
 
 ## 2. Auth (server)
 - [ ] **2.1** `AppError` + `errorHandler` (contract error shape)
@@ -39,6 +39,9 @@ Work top to bottom, one task at a time. Tick a box only when its tests pass. IDs
 
 ## Log
 Newest first. One line per session: what was done, anything half-finished or blocked, gotchas.
+- 2026-11-11 — 1.2 done: client scaffold (React 19, Vite 8, Vitest 5, MSW 3), 3 tests green, dev proxy
+  verified end to end. Gotcha: MSW 3 renamed `onUnhandledRequest` to `onUnhandledFrame`. Router/axios
+  deferred to 4.1. Next: 2.1.
 - 2026-11-11 — 1.1 done: server scaffold (Express 5, TS 6, zod 4, mongoose 9, vitest 5), 12 tests green.
   Gotchas: npm now blocks install scripts — approved bcrypt/esbuild/mongodb-memory-server via `allowScripts`
   in package.json. Express 5 forwards async errors to the error handler natively. Docker Desktop must be
