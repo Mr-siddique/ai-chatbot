@@ -38,6 +38,17 @@ describe('request logging (BON-03)', () => {
     });
   });
 
+  it('logs the full path for routes inside mounted routers', async () => {
+    const { app, requestLines } = appWithCapturedLogs();
+
+    await request(app).post('/auth/logout'); // handled inside the /auth router
+
+    expect(requestLines()[0]).toMatchObject({
+      msg: expect.stringMatching(/^POST \/auth\/logout 204 \d+ms$/),
+      req: { url: '/auth/logout' },
+    });
+  });
+
   it('uses warn for 4xx and info for success', async () => {
     const { app, requestLines } = appWithCapturedLogs();
 

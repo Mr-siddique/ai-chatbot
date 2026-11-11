@@ -33,12 +33,17 @@ Work top to bottom, one task at a time. Tick a box only when its tests pass. IDs
 - [x] **5.3** Env-based config + fail-fast validation — BON-03
 
 ## 6. Ship
-- [ ] **6.1** Dockerfiles + nginx.conf + docker-compose.yml; manual check: signup → chat — OPS-01, 02, 03
+- [x] **6.1** Dockerfiles + nginx.conf + docker-compose.yml; manual check: signup → chat — OPS-01, 02, 03
 - [x] **6.2** Deploy (Render + Vercel + Atlas) and add the link to the README — OPS-05
 - [ ] **6.3** Final README pass + `/verify` over the whole spec — OPS-04
 
 ## Log
 Newest first. One line per session: what was done, anything half-finished or blocked, gotchas.
+- 2026-11-13 — 6.1 done: server/Dockerfile (multi-stage node:22-slim, non-root, HEALTHCHECK), client/Dockerfile
+  (Vite build → nginx:1.27-alpine), client/nginx.conf (/api/ proxy, 90 s read timeout, SPA fallback, asset caching),
+  docker-compose.yml (mongo healthcheck + volume, COOKIE_SECURE=false, TRUST_PROXY=1). Verified at :8080: signup
+  (bcrypt in container), real AI reply 12 s via nginx, history, logout. Found + fixed: request logs showed router-
+  relative paths ("/signup") → use req.originalUrl. Next: 6.3.
 - 2026-11-13 — 6.2 done: live at https://ai-chatbot-web-zikz.onrender.com (API https://ai-chatbot-api-0txk.onrender.com).
   Gotchas: Render suffixed service names → fixed rewrite/CLIENT_ORIGIN; via the static-site rewrite each request
   came from a different proxy IP (XFF has 6 entries, client first; direct = 3) → TRUST_PROXY=6, verified one shared

@@ -31,6 +31,9 @@ Details: [specs/PLAN.md](specs/PLAN.md) · API: [specs/SPEC.md](specs/SPEC.md#ap
 cp .env.example .env        # set JWT_SECRET and OPENROUTER_API_KEY
 docker compose up --build   # http://localhost:8080
 ```
+Three containers: `mongo` (data in the `mongo-data` volume), `server` (Express, health-checked) and `client`
+(nginx serving the React build and proxying `/api/` to the server). Set `MONGODB_URI` in `.env` to use Atlas
+instead of the bundled MongoDB. `docker compose down -v` stops everything and deletes the local data.
 
 ## Local development (no Docker)
 Prereqs: Node 22, a MongoDB (local or Atlas), an [OpenRouter key](https://openrouter.ai/keys).

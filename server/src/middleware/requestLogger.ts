@@ -1,7 +1,12 @@
 import { randomUUID } from 'node:crypto';
+import type { IncomingMessage } from 'node:http';
 import type { RequestHandler } from 'express';
 import type { Logger } from 'pino';
 import { pinoHttp } from 'pino-http';
+
+function fullUrl(req: IncomingMessage): string {
+  return (req as IncomingMessage & { originalUrl?: string }).originalUrl ?? req.url ?? '';
+}
 
 /** Accept a caller's X-Request-Id only if it looks like an id (no log injection). */
 const REQUEST_ID = /^[\w-]{8,64}$/;
@@ -27,12 +32,18 @@ export function createRequestLogger(logger: Logger): RequestHandler {
       if (res.statusCode >= 400) return 'warn';
       return 'info';
     },
+    // Express shortens req.url inside mounted routers ("/signup"); originalUrl
+    // keeps the full path ("/auth/signup").
     customSuccessMessage: (req, res, responseTime) =>
-      `${req.method} ${req.url} ${res.statusCode} ${Math.round(responseTime)}ms`,
-    customErrorMessage: (req, res) => `${req.method} ${req.url} ${res.statusCode}`,
+      `${req.method} ${fullUrl(req)} ${res.statusCode} ${Math.round(responseTime)}ms`,
+    customErrorMessage: (req, res) => `${req.method} ${fullUrl(req)} ${res.statusCode}`,
     // Keep request/response records small: no headers, no bodies.
     serializers: {
-      req: (req: { id: unknown; method: string; url: string }) => ({ id: req.id, method: req.method, url: req.url }),
+      req: (req: { id: unknown; method: string; url: string; raw?: { originalUrl?: string } }) => ({
+        id: req.id,
+        method: req.method,
+        url: req.raw?.originalUrl ?? req.url,
+      }),
       res: (res: { statusCode: number }) => ({ statusCode: res.statusCode }),
     },
   });
