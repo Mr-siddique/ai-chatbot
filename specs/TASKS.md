@@ -3,7 +3,7 @@
 Work top to bottom, one task at a time. Tick a box only when its tests pass. IDs refer to `SPEC.md`.
 
 ## 1. Scaffold
-- [ ] **1.1** Server: package.json, tsconfig (strict, ESM), vitest, `config.ts`, `app.ts`, `index.ts`, `db.ts`, `GET /health`, test helper (in-memory Mongo)
+- [x] **1.1** Server: package.json, tsconfig (strict, ESM), vitest, `config.ts`, `app.ts`, `index.ts`, `db.ts`, `GET /health`, test helper (in-memory Mongo)
 - [ ] **1.2** Client: Vite React-TS, vitest + Testing Library + MSW, `/api` dev proxy
 
 ## 2. Auth (server)
@@ -39,4 +39,8 @@ Work top to bottom, one task at a time. Tick a box only when its tests pass. IDs
 
 ## Log
 Newest first. One line per session: what was done, anything half-finished or blocked, gotchas.
+- 2026-11-11 — 1.1 done: server scaffold (Express 5, TS 6, zod 4, mongoose 9, vitest 5), 12 tests green.
+  Gotchas: npm now blocks install scripts — approved bcrypt/esbuild/mongodb-memory-server via `allowScripts`
+  in package.json. Express 5 forwards async errors to the error handler natively. Docker Desktop must be
+  running for local mongo. Next: 1.2.
 - 2026-11-11 — Specs written. Next: 1.1.
