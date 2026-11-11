@@ -36,7 +36,7 @@ services:
         value: "30000"
       # The public site URL (CORS allow-list + OpenRouter attribution).
       - key: CLIENT_ORIGIN
-        value: https://ai-chatbot-web.onrender.com
+        value: https://ai-chatbot-web-zikz.onrender.com
 
   # ---------- Web: React app (static) ----------
   - type: web
@@ -54,7 +54,7 @@ services:
       # auth cookie stays first-party (see specs/PLAN.md).
       - type: rewrite
         source: /api/*
-        destination: https://ai-chatbot-api.onrender.com/*
+        destination: https://ai-chatbot-api-0txk.onrender.com/*
       # Single-page app: every other path serves index.html.
       - type: rewrite
         source: /*
