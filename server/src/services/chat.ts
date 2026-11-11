@@ -94,7 +94,11 @@ export function createChatService({ ai, config, logger }: ChatServiceDeps) {
         ]);
 
         // Move the conversation to the top of the history list (CHAT-03).
-        await Conversation.updateOne({ _id: conversation._id }, { $set: { updatedAt: new Date() } }, { timestamps: false });
+        await Conversation.updateOne(
+          { _id: conversation._id, userId },
+          { $set: { updatedAt: new Date() } },
+          { timestamps: false },
+        );
 
         return {
           conversationId: conversation.id,
@@ -103,7 +107,7 @@ export function createChatService({ ai, config, logger }: ChatServiceDeps) {
         };
       } catch (err) {
         // Don't leave an empty conversation behind if saving the messages failed.
-        if (!existing) await Conversation.deleteOne({ _id: conversation._id }).catch(() => undefined);
+        if (!existing) await Conversation.deleteOne({ _id: conversation._id, userId }).catch(() => undefined);
         throw err;
       }
     },

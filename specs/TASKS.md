@@ -18,7 +18,7 @@ Work top to bottom, one task at a time. Tick a box only when its tests pass. IDs
 - [x] **3.2** `Conversation` + `Message` models
 - [x] **3.3** `POST /chat/send` (new + existing conversation, rollback on AI failure) — CHAT-01, 02, 06, AI-04
 - [x] **3.4** `GET /chat/history` + `GET /chat/history/:id` — CHAT-03, 04
-- [ ] **3.5** Two-user isolation tests — CHAT-05
+- [x] **3.5** Two-user isolation tests — CHAT-05
 
 ## 4. Client
 - [ ] **4.1** Axios client + `AuthContext` (`/auth/me` on boot) + protected routes — UI-05, UI-06, AUTH-05
@@ -39,6 +39,10 @@ Work top to bottom, one task at a time. Tick a box only when its tests pass. IDs
 
 ## Log
 Newest first. One line per session: what was done, anything half-finished or blocked, gotchas.
+- 2026-11-12 — 3.5 done: chat.isolation.test.ts (Bob vs Alice on every chat endpoint + userId-in-body/query
+  attempts) and a query guard (mongoose debug hook) that fails if any conversations/messages query lacks a userId
+  filter — mutation-tested with findById. Internal updateOne/deleteOne now also filter by userId. 159 tests
+  green. Server API (sections 2–3) complete. Open question: raise AI_TIMEOUT_MS to 60 s. Next: 4.1.
 - 2026-11-12 — 3.4 done: GET /chat/history (newest activity first) + GET /chat/history/:id (messages oldest
   first, 400 bad id, 404 foreign/missing — identical bodies); 153 tests green. Most CHAT-05 cases already
   covered in send/history suites. Next: 3.5.
