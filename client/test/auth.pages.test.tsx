@@ -7,7 +7,7 @@ import { server } from './msw/server.ts';
 import { renderApp } from './renderApp.tsx';
 
 const location = () => screen.getByTestId('location').textContent;
-const signedIn = () => screen.findByText(`Signed in as ${testUser.name}`);
+const signedIn = () => screen.findByRole('button', { name: 'Log out' });
 
 /** Records request bodies sent to an endpoint and replies with `respond`. */
 function capture(method: 'post', path: string, respond: () => Response | Promise<Response>) {

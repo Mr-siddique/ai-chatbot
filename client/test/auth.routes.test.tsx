@@ -16,7 +16,7 @@ describe('routing and session (AUTH-05, AUTH-06)', () => {
     server.use(session.loggedIn());
     renderApp('/');
 
-    expect(await screen.findByText(`Signed in as ${testUser.name}`)).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Log out' })).toBeInTheDocument();
     expect(location()).toBe('/');
   });
 
@@ -31,7 +31,7 @@ describe('routing and session (AUTH-05, AUTH-06)', () => {
 
     expect(screen.getByRole('status')).toHaveTextContent('Loading…');
     expect(screen.queryByRole('heading', { name: 'Log in' })).not.toBeInTheDocument();
-    expect(await screen.findByText(`Signed in as ${testUser.name}`)).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Log out' })).toBeInTheDocument();
   });
 
   it.each(['/', '/c/6650f0c2a1b2c3d4e5f60719'])('AUTH-05: logged out, %s redirects to /login', async (path) => {
@@ -46,7 +46,7 @@ describe('routing and session (AUTH-05, AUTH-06)', () => {
     server.use(session.loggedIn());
     renderApp(path);
 
-    expect(await screen.findByText(`Signed in as ${testUser.name}`)).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Log out' })).toBeInTheDocument();
     expect(location()).toBe('/');
   });
 
@@ -100,7 +100,7 @@ describe('logout and session expiry (UI-07, UI-05)', () => {
   it('UI-05: an expired session on a later request sends the user to /login', async () => {
     server.use(session.loggedIn());
     const { user } = renderApp('/');
-    await screen.findByText(`Signed in as ${testUser.name}`);
+    await screen.findByRole('button', { name: 'Log out' });
 
     // The session expires; the next API call gets 401 UNAUTHENTICATED.
     server.use(
@@ -129,7 +129,7 @@ describe('server data cache (TanStack Query)', () => {
   it('logging out drops cached server data so the next user never sees it', async () => {
     server.use(session.loggedIn());
     const { user, queryClient } = renderApp('/');
-    await screen.findByText(`Signed in as ${testUser.name}`);
+    await screen.findByRole('button', { name: 'Log out' });
     queryClient.setQueryData(queryKeys.conversations, [{ id: 'c1', title: 'Private chat' }]);
 
     await user.click(screen.getByRole('button', { name: 'Log out' }));
@@ -142,7 +142,7 @@ describe('server data cache (TanStack Query)', () => {
   it('an expired session also drops cached server data', async () => {
     server.use(session.loggedIn());
     const { queryClient } = renderApp('/');
-    await screen.findByText(`Signed in as ${testUser.name}`);
+    await screen.findByRole('button', { name: 'Log out' });
     queryClient.setQueryData(queryKeys.conversations, [{ id: 'c1', title: 'Private chat' }]);
 
     server.use(http.get(apiUrl('/chat/history'), () => errorResponse(401, 'UNAUTHENTICATED', 'Expired')));

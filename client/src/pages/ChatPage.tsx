@@ -1,15 +1,27 @@
-import { useAuth } from '../auth/context.ts';
+import { useState } from 'react';
+import { ChatLayout } from '../components/ChatLayout.tsx';
+import { MessageInput } from '../components/MessageInput.tsx';
+import styles from './ChatPage.module.css';
 
-/** Placeholder: the chat UI arrives in TASKS.md 4.3+. */
+/**
+ * The signed-in chat screen. Layout only for now: the conversation list
+ * arrives in TASKS.md 4.4 and sending in 4.5.
+ */
 export default function ChatPage() {
-  const { user, logout } = useAuth();
+  const [draft, setDraft] = useState('');
+
   return (
-    <main className="app-placeholder">
-      <h1>AI Support</h1>
-      <p>Signed in as {user?.name}</p>
-      <button type="button" onClick={() => void logout()}>
-        Log out
-      </button>
-    </main>
+    <ChatLayout sidebar={<p className={styles.sidebarEmpty}>No conversations yet.</p>}>
+      <section className={styles.thread} aria-label="Messages">
+        <div className={styles.empty}>
+          <h1 className={styles.emptyTitle}>How can we help you today?</h1>
+          <p className={styles.emptyText}>Ask a question about your account, an order, or anything else.</p>
+        </div>
+      </section>
+
+      <div className={styles.composer}>
+        <MessageInput value={draft} onChange={setDraft} onSubmit={() => undefined} />
+      </div>
+    </ChatLayout>
   );
 }
