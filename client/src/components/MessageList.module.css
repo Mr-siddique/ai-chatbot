@@ -1,0 +1,43 @@
+.log {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.item {
+  display: flex;
+}
+
+.item[data-role='user'] {
+  justify-content: flex-end;
+}
+
+.bubble {
+  margin: 0;
+  max-width: min(85%, 640px);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius);
+  white-space: pre-wrap; /* UI-03: keep the line breaks */
+  overflow-wrap: anywhere; /* long URLs don't break the layout */
+  line-height: 1.5;
+}
+
+.item[data-role='user'] .bubble {
+  background: var(--color-primary);
+  color: var(--color-primary-text);
+  border-bottom-right-radius: 4px;
+}
+
+.item[data-role='assistant'] .bubble {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-bottom-left-radius: 4px;
+}

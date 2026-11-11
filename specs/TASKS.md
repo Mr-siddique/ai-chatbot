@@ -24,7 +24,7 @@ Work top to bottom, one task at a time. Tick a box only when its tests pass. IDs
 - [x] **4.1** Axios client + `AuthContext` (`/auth/me` on boot) + protected routes — UI-05, UI-06, AUTH-05
 - [x] **4.2** Login + Signup pages — UI-01
 - [x] **4.3** Chat layout: header with logout, sidebar, thread, input; responsive CSS — UI-07, UI-08
-- [ ] **4.4** Conversation list + `/c/:id` loading — UI-04
+- [x] **4.4** Conversation list + `/c/:id` loading — UI-04
 - [ ] **4.5** Send flow: optimistic message, error + retry, new-chat navigation — UI-02, UI-03
 
 ## 5. Bonus
@@ -39,6 +39,10 @@ Work top to bottom, one task at a time. Tick a box only when its tests pass. IDs
 
 ## Log
 Newest first. One line per session: what was done, anything half-finished or blocked, gotchas.
+- 2026-11-12 — 4.4 done: useConversations/useConversation (TanStack), ConversationList (NavLink highlight,
+  relative time, loading/empty/error+Retry), MessageList (role=log, pre-wrap, scroll to newest), ChatPage reads
+  /c/:id with not-found (400/404) and retry states. MSW fixtures + default empty history. 80 client tests green.
+  Next: 4.5.
 - 2026-11-12 — 4.3 done: ChatLayout (header with name + logout, sidebar with New chat, main; <768px the sidebar
   is a drawer: menu button, Escape/backdrop/navigation close it), MessageInput (Enter sends, Shift+Enter newline,
   IME-safe, 4000 cap + counter), empty state. 61 client tests green. Gotcha: jsdom can't apply media queries and
