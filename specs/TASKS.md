@@ -15,7 +15,7 @@ Work top to bottom, one task at a time. Tick a box only when its tests pass. IDs
 
 ## 3. AI + Chat (server)
 - [x] **3.1** `AiService` interface + OpenRouter impl + system prompt + timeout/error handling (fake `fetch` in tests) — AI-01..04
-- [ ] **3.2** `Conversation` + `Message` models
+- [x] **3.2** `Conversation` + `Message` models
 - [ ] **3.3** `POST /chat/send` (new + existing conversation, rollback on AI failure) — CHAT-01, 02, 06, AI-04
 - [ ] **3.4** `GET /chat/history` + `GET /chat/history/:id` — CHAT-03, 04
 - [ ] **3.5** Two-user isolation tests — CHAT-05
@@ -39,6 +39,9 @@ Work top to bottom, one task at a time. Tick a box only when its tests pass. IDs
 
 ## Log
 Newest first. One line per session: what was done, anything half-finished or blocked, gotchas.
+- 2026-11-11 — 3.2 done: Conversation + Message models with list/read indexes and public serializers (no
+  userId); 119 tests green. Always sort messages with `CHRONOLOGICAL` ({createdAt, _id}) — user msg and AI reply
+  share a timestamp. Optional later: AI_CONTEXT_MAX_CHARS budget in buildMessages (discussed, deferred). Next: 3.3.
 - 2026-11-11 — 3.1 revised: switched services/ai.ts to @openrouter/sdk (same AiService interface), 108 tests
   green, live smoke OK. Gotchas: SDK default retries 5xx for up to 1h → disabled; title header is now
   X-OpenRouter-Title; no `reasoning.exclude` option; postinstall script denied (only checks model-type staleness).
