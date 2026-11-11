@@ -21,7 +21,7 @@ Work top to bottom, one task at a time. Tick a box only when its tests pass. IDs
 - [x] **3.5** Two-user isolation tests — CHAT-05
 
 ## 4. Client
-- [ ] **4.1** Axios client + `AuthContext` (`/auth/me` on boot) + protected routes — UI-05, UI-06, AUTH-05
+- [x] **4.1** Axios client + `AuthContext` (`/auth/me` on boot) + protected routes — UI-05, UI-06, AUTH-05
 - [ ] **4.2** Login + Signup pages — UI-01
 - [ ] **4.3** Chat layout: header with logout, sidebar, thread, input; responsive CSS — UI-07, UI-08
 - [ ] **4.4** Conversation list + `/c/:id` loading — UI-04
@@ -39,6 +39,14 @@ Work top to bottom, one task at a time. Tick a box only when its tests pass. IDs
 
 ## Log
 Newest first. One line per session: what was done, anything half-finished or blocked, gotchas.
+- 2026-11-12 — Added TanStack Query (v5) for server data; /auth/me now cached under queryKeys.me and
+  AuthProvider is a thin Context over it. Logout/expiry remove all other cached queries. 25 client tests green.
+- 2026-11-12 — Pages lazy-loaded (React.lazy + Suspense in App.tsx); pages live in src/pages/ with default
+  exports, one build chunk each. Shared FullPageStatus component.
+- 2026-11-12 — 4.1 done: api/ (axios client, ApiError, typed auth/chat calls), AuthProvider (/auth/me on load,
+  in-memory only), RequireAuth/PublicOnly guards, routes with placeholder pages; 23 client tests green.
+  React Router is v8 (import from `react-router`). Only 401 UNAUTHENTICATED logs out — not INVALID_CREDENTIALS.
+  Gotcha: <output> has role=status. Next: 4.2.
 - 2026-11-12 — 3.5 done: chat.isolation.test.ts (Bob vs Alice on every chat endpoint + userId-in-body/query
   attempts) and a query guard (mongoose debug hook) that fails if any conversations/messages query lacks a userId
   filter — mutation-tested with findById. Internal updateOne/deleteOne now also filter by userId. 159 tests

@@ -19,6 +19,8 @@ If code and spec disagree, update the spec first, then the code. Don't build wha
 - Server: routes (zod validation) → services (logic) → models. Throw `AppError`, and let
   `errorHandler` format it. Read env only in `config.ts`.
 - Every chat query filters by `userId` from `req.user`. Another user's data → 404.
+- Client: server data goes through TanStack Query with keys from `queryKeys`; other state is React
+  state/Context. Pages are lazy-loaded from `src/pages/`.
 - JWT lives only in an httpOnly cookie. The client never touches it, and nothing goes in localStorage.
 - Tests never call OpenRouter (inject a fake `AiService` or SDK `fetcher`). The only exception is
   `server/test/live/`, run on demand with `npm run test:live` (uses free-tier quota).

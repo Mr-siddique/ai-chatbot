@@ -3,7 +3,7 @@
 ## Stack
 | Layer | Choice |
 |-------|--------|
-| Client | React 18 + Vite + TypeScript, React Router, Axios, plain CSS |
+| Client | React 19 + Vite + TypeScript, React Router 8, Axios, TanStack Query, plain CSS |
 | Server | Node 22, Express, TypeScript, mongoose, bcrypt, jsonwebtoken, cookie-parser, zod, helmet |
 | DB | MongoDB 7 in Docker locally, MongoDB Atlas (free tier) in prod |
 | AI | OpenRouter via the official `@openrouter/sdk` |
@@ -22,6 +22,10 @@
 - **Stateless logout**: logout clears the cookie but doesn't revoke the JWT, so a copied token stays valid until
   it expires (`JWT_EXPIRES_IN`). A server-side deny-list isn't worth it for this app. `requireAuth` reads only the
   cookie (no `Authorization` header) and rejects tokens for deleted users.
+- **Client state**: server data (current user, conversations, messages) lives in TanStack Query under
+  `queryKeys` (`src/api/queryClient.ts`); everything else is React state/Context. Logout and session expiry drop
+  all cached server data so the next user never sees it. Mutations never auto-retry (no double sends).
+- **Lazy-loaded pages**: each page in `src/pages/` is its own chunk (`React.lazy` + `Suspense`).
 - **TypeScript + Vitest** on both sides: one test runner, types catch contract drift.
 - **Default model `nvidia/nemotron-3.5-lightning:free`** (checked 2026-11-11; the Llama 3.3 free tier
   was removed and the Gemma free models were rate-limited). It's a reasoning model: read only
@@ -41,8 +45,9 @@ server/src/
 server/test/   *.test.ts
 
 client/src/
-  api/         client.ts (axios, /api, withCredentials, 401 handler)  types.ts
-  auth/        AuthContext.tsx  ProtectedRoute.tsx
+  api/         client.ts (axios, /api, withCredentials, 401 handler)  queryClient.ts (TanStack, queryKeys)
+               types.ts  auth.ts  chat.ts
+  auth/        AuthProvider.tsx  context.ts (useAuth)  routeGuards.tsx
   pages/       LoginPage  SignupPage  ChatPage
   components/  ConversationList  MessageList  MessageInput  TypingIndicator
 ```

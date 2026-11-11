@@ -19,4 +19,9 @@ export default tseslint.config(
       '@typescript-eslint/consistent-type-imports': 'error',
     },
   },
+  {
+    // Fast refresh is a dev-server concern; test helpers may mix exports.
+    files: ['test/**'],
+    rules: { 'react-refresh/only-export-components': 'off' },
+  },
 );
